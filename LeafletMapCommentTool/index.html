@@ -9,10 +9,25 @@
 </head>
 <body>
     <div id="map"></div>
+
+    <script src="Scripts/jquery-1.6.4.min.js"></script>
+    <script src="Scripts/jquery.signalR-2.2.1.min.js"></script>
     <script src="Scripts/mapConfig.js"></script>
     <script src="Scripts/mapCommentTool.js"></script>
+
     <script>
         L.MapCommentTool.addTo(map);
+        $(function () {
+            var con = $.hubConnection();
+            var hub = con.createHubProxy('networkComment');
+            hub.on('onGetMessage', function (i) {
+                console.log(i);
+            });
+            con.start(function () {
+                hub.invoke('getMessage');
+            });
+        });
     </script>
+
 </body>
 </html>

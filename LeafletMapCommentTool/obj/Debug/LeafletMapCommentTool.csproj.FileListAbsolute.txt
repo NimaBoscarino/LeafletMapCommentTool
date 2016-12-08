@@ -17,3 +17,4 @@ c:\users\nboscarino\documents\visual studio 2013\Projects\LeafletMapCommentTool\
 c:\users\nboscarino\documents\visual studio 2013\Projects\LeafletMapCommentTool\LeafletMapCommentTool\obj\Debug\LeafletMapCommentTool.csprojResolveAssemblyReference.cache
 c:\users\nboscarino\documents\visual studio 2013\Projects\LeafletMapCommentTool\LeafletMapCommentTool\obj\Debug\LeafletMapCommentTool.dll
 c:\users\nboscarino\documents\visual studio 2013\Projects\LeafletMapCommentTool\LeafletMapCommentTool\obj\Debug\LeafletMapCommentTool.pdb
+c:\users\nboscarino\documents\visual studio 2013\Projects\LeafletMapCommentTool\LeafletMapCommentTool\bin\Microsoft.Web.Infrastructure.dll
