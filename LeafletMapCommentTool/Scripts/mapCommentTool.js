@@ -61,6 +61,8 @@ if (!Array.prototype.findIndex) {
             self.ControlBar.root = self;
             self.Comments.root = self;
             self.Util.root = self;
+            self.Tools.root = self;
+            self.Network.root = self;
 
             self.currentMode = 'map';
             var customControl = L.Control.extend({
@@ -621,7 +623,6 @@ if (!Array.prototype.findIndex) {
     };
 
     MapCommentTool.Util = {
-
         generateGUID: function () {
             function s4() {
                 return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -630,6 +631,7 @@ if (!Array.prototype.findIndex) {
         },
 
         getMousePos: function (x, y) {
+            var self = this;
             // this parses stuff like "translate3d(-1257px, -57px, 0px)" and turns it into an array like...
             // [ "translate3d", "-1257", "", "", "-57", "", "", "0", "", "" ]
             var canvasTransformArray = self.root.drawingCanvas._container.style.transform.split(/,|\(|\)|px| /);
@@ -649,6 +651,11 @@ if (!Array.prototype.findIndex) {
 
         on: function () {
             var self = this;
+            self.pen.root = self.root;
+            self.eraser.root = self.root;
+            self.text.root = self.root;
+
+
             self.setCurrentTool(self.defaultTool, {
                 colour: 'red'
             });
@@ -670,9 +677,9 @@ if (!Array.prototype.findIndex) {
             self[self.currentTool].initialize(options);
             // set canvas class
             self.toolList.forEach(function (toolname) {
-                window.map.MapCommentTool.drawingCanvas._container.classList.remove("drawing-canvas-" + toolname);
+                self.root.drawingCanvas._container.classList.remove("drawing-canvas-" + toolname);
             });
-            window.map.MapCommentTool.drawingCanvas._container.classList.add("drawing-canvas-" + tool);
+            self.root.drawingCanvas._container.classList.add("drawing-canvas-" + tool);
             return tool;
         },
 
@@ -688,13 +695,13 @@ if (!Array.prototype.findIndex) {
             initialize: function (options) {
                 var self = this;
                 self.colour = options.colour;
-                window.map.MapCommentTool.drawingCanvas._container.classList.add("drawing-canvas-" + self.colour + "-pen");
+                self.root.drawingCanvas._container.classList.add("drawing-canvas-" + self.colour + "-pen");
 
                 self.setListeners();
             },
             terminate: function () {
                 var self = this;
-                window.map.MapCommentTool.drawingCanvas._container.classList.remove("drawing-canvas-" + self.colour + "-pen");
+                self.root.drawingCanvas._container.classList.remove("drawing-canvas-" + self.colour + "-pen");
             },
             drawLine: function (ctx, x, y, size) {
                 var self = this;
@@ -723,17 +730,17 @@ if (!Array.prototype.findIndex) {
             // don't have to remove listeners because the canvas gets removed anyways...
             setListeners: function () {
                 var self = this;
-                var canvas = window.map.MapCommentTool.drawingCanvas._container;
+                var canvas = self.root.drawingCanvas._container;
                 var context = canvas.getContext('2d');
                 canvas.addEventListener('mousedown', function () {
-                    if (window.map.MapCommentTool.Tools.currentTool == 'pen') {
+                    if (self.root.Tools.currentTool == 'pen') {
                         self.stroke = true;
                     }
                 });
 
                 canvas.addEventListener('mousemove', function (e) {
-                    if (self.stroke && window.map.MapCommentTool.Tools.currentTool == 'pen') {
-                        var pos = window.map.MapCommentTool.Util.getMousePos(e.clientX, e.clientY);
+                    if (self.stroke && self.root.Tools.currentTool == 'pen') {
+                        var pos = self.root.Util.getMousePos(e.clientX, e.clientY);
                         self.mouseX = pos.x;
                         self.mouseY = pos.y;
                         self.drawLine(context, self.mouseX, self.mouseY, 3);
@@ -741,7 +748,7 @@ if (!Array.prototype.findIndex) {
                 }, false);
 
                 window.addEventListener('mouseup', function (e) {
-                    if (self.stroke && window.map.MapCommentTool.Tools.currentTool == 'pen') {
+                    if (self.stroke && self.root.Tools.currentTool == 'pen') {
                         self.stroke = false;
                         // Reset lastX and lastY to -1 to indicate that they are now invalid, since we have lifted the "pen"
                         self.lastX = -1;
@@ -763,10 +770,11 @@ if (!Array.prototype.findIndex) {
             initialize: function () {
                 var self = this;
                 self.setListeners();
-                map.getPane('markerPane').style['z-index'] = 600;
+                self.root.ownMap.getPane('markerPane').style['z-index'] = 600;
             },
             terminate: function () {
-                map.getPane('markerPane').style['z-index'] = 300;
+                var self = this;
+                self.root.ownMap.getPane('markerPane').style['z-index'] = 300;
             },
             drawLine: function (ctx, x, y, size) {
                 var self = this;
@@ -799,17 +807,17 @@ if (!Array.prototype.findIndex) {
             // don't have to remove listeners because the canvas gets removed anyways...
             setListeners: function () {
                 var self = this;
-                var canvas = window.map.MapCommentTool.drawingCanvas._container;
+                var canvas = self.root.drawingCanvas._container;
                 var context = canvas.getContext('2d');
                 canvas.addEventListener('mousedown', function () {
-                    if (window.map.MapCommentTool.Tools.currentTool == 'eraser') {
+                    if (self.root.Tools.currentTool == 'eraser') {
                         self.stroke = true;
                     }
                 });
 
                 canvas.addEventListener('mousemove', function (e) {
-                    if (self.stroke && window.map.MapCommentTool.Tools.currentTool == 'eraser') {
-                        var pos = window.map.MapCommentTool.Util.getMousePos(e.clientX, e.clientY);
+                    if (self.stroke && self.root.Tools.currentTool == 'eraser') {
+                        var pos = self.root.Util.getMousePos(e.clientX, e.clientY);
                         self.mouseX = pos.x;
                         self.mouseY = pos.y;
                         self.drawLine(context, self.mouseX, self.mouseY, 35);
@@ -817,7 +825,7 @@ if (!Array.prototype.findIndex) {
                 }, false);
 
                 window.addEventListener('mouseup', function (e) {
-                    if (self.stroke && window.map.MapCommentTool.Tools.currentTool == 'eraser') {
+                    if (self.stroke && self.root.Tools.currentTool == 'eraser') {
                         self.stroke = false;
                         // Reset lastX and lastY to -1 to indicate that they are now invalid, since we have lifted the "pen"
                         self.lastX = -1;
@@ -837,17 +845,17 @@ if (!Array.prototype.findIndex) {
             },
             terminate: function () {
                 var self = this;
-                var comment = window.map.MapCommentTool.Comments.editingComment;
+                var comment = self.root.Comments.editingComment;
             },
             handleText: function (e) {
-                var self = window.map.MapCommentTool.Tools.text;
-                var comment = window.map.MapCommentTool.Comments.editingComment;
-                var canvas = window.map.MapCommentTool.drawingCanvas._container;
+                var self = this;
+                var comment = self.root.Comments.editingComment;
+                var canvas = self.rootMapCommentTool.drawingCanvas._container;
                 var marker;
             },
             setListeners: function () {
                 var self = this;
-                var canvas = window.map.MapCommentTool.drawingCanvas._container;
+                var canvas = self.root.drawingCanvas._container;
                 var context = canvas.getContext('2d');
             },
             renderText: function (comment, textId, stringVal) {
@@ -861,8 +869,9 @@ if (!Array.prototype.findIndex) {
         usersViewing: [],
 
         init: function () {
+            var self = this;
             socket.on('load comments', function (msg) {
-                map.MapCommentTool.Network.lockedComments = msg.editList;
+                self.lockedComments = msg.editList;
 
                 msg.comments.forEach(function (loadedComment) {
                     var comment = L.layerGroup();
@@ -872,15 +881,15 @@ if (!Array.prototype.findIndex) {
                     var newImage = L.imageOverlay(imageUrl, [imageBounds._southWest, imageBounds._northEast]);
                     newImage.addTo(comment);
                     newImage.layerType = 'drawing';
-                    window.map.MapCommentTool.Comments.list.push(comment);
+                    self.root.Comments.list.push(comment);
                     comment.name = loadedComment.name;
                     comment.saveState = true;
                     comment.zoomLevel = loadedComment.zoomLevel;
                     // IF CURRENTLY IN MAP VIEWING MODE
                     comment.addTo(map);
                 });
-                if (window.map.MapCommentTool.currentMode == 'controlBarHome') {
-                    window.map.MapCommentTool.ControlBar.displayControl('home');
+                if (self.root.currentMode == 'controlBarHome') {
+                    self.root.ControlBar.displayControl('home');
                 }
             });
             socket.on('new comment added', function (msg) {
@@ -891,7 +900,7 @@ if (!Array.prototype.findIndex) {
                 var newImage = L.imageOverlay(imageUrl, [imageBounds._southWest, imageBounds._northEast]);
                 newImage.addTo(comment);
                 newImage.layerType = 'drawing';
-                window.map.MapCommentTool.Comments.list.push(comment);
+                self.root.Comments.list.push(comment);
                 comment.saveState = true;
                 comment.name = msg.name;
                 comment.zoomLevel = msg.zoomLevel;
@@ -900,14 +909,14 @@ if (!Array.prototype.findIndex) {
                 comment.addTo(map);
 
                 //IF IN HOME VIEW, RELOAD COMMENT LIST
-                if (window.map.MapCommentTool.currentMode == 'controlBarHome') {
-                    window.map.MapCommentTool.ControlBar.displayControl('home');
+                if (self.root.currentMode == 'controlBarHome') {
+                    self.root.ControlBar.displayControl('home');
                 }
             });
 
             socket.on('comment edited', function (msg) {
                 var comment;
-                window.map.MapCommentTool.Comments.list.forEach(function (listComment) {
+                self.root.Comments.list.forEach(function (listComment) {
                     if (listComment.id == msg.id) {
                         comment = listComment;
                     }
@@ -927,8 +936,8 @@ if (!Array.prototype.findIndex) {
                 comment.zoomLevel = msg.zoomLevel;
 
                 //IF IN HOME VIEW, RELOAD COMMENT LIST
-                if (window.map.MapCommentTool.currentMode == 'controlBarHome') {
-                    window.map.MapCommentTool.ControlBar.displayControl('home');
+                if (self.root.currentMode == 'controlBarHome') {
+                    self.root.ControlBar.displayControl('home');
                 }
             });
 
@@ -936,8 +945,8 @@ if (!Array.prototype.findIndex) {
                 map.MapCommentTool.Network.lockedComments = msg.editList;
                 //IF IN HOME VIEW, RELOAD COMMENT LIST
 
-                if (window.map.MapCommentTool.currentMode == 'controlBarHome') {
-                    window.map.MapCommentTool.ControlBar.displayControl('home');
+                if (self.root.currentMode == 'controlBarHome') {
+                    self.root.ControlBar.displayControl('home');
                 }
             });
 
