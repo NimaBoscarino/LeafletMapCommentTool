@@ -59,6 +59,8 @@ if (!Array.prototype.findIndex) {
 
             // Add root object as 'root' for all components
             self.ControlBar.root = self;
+            self.Comments.root = self;
+            self.Util.root = self;
 
             self.currentMode = 'map';
             var customControl = L.Control.extend({
@@ -610,7 +612,7 @@ if (!Array.prototype.findIndex) {
             var self = this;
             var comment = L.layerGroup();
             comment.saveState = false;
-            comment.id = window.map.MapCommentTool.Util.generateGUID();
+            comment.id = self.root.Util.generateGUID();
 
             self.list.push(comment);
             return comment;
@@ -630,7 +632,7 @@ if (!Array.prototype.findIndex) {
         getMousePos: function (x, y) {
             // this parses stuff like "translate3d(-1257px, -57px, 0px)" and turns it into an array like...
             // [ "translate3d", "-1257", "", "", "-57", "", "", "0", "", "" ]
-            var canvasTransformArray = window.map.MapCommentTool.drawingCanvas._container.style.transform.split(/,|\(|\)|px| /);
+            var canvasTransformArray = self.root.drawingCanvas._container.style.transform.split(/,|\(|\)|px| /);
             var x_true = x + (parseFloat(canvasTransformArray[1]));
             var y_true = y + (parseFloat(canvasTransformArray[4]));
             return {
