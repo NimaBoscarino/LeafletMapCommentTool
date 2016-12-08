@@ -101,7 +101,6 @@ if (!Array.prototype.findIndex) {
             controlContainer.insertBefore(container, controlContainer.firstChild);
 
             self.mergeCanvas = document.createElement('canvas');
-            self.textRenderingCanvas = document.createElement('canvas');
             self._map = map;
 
             map.MapCommentTool = MapCommentTool;
@@ -127,11 +126,6 @@ if (!Array.prototype.findIndex) {
             window.map.MapCommentTool.Comments.list.forEach(function (_comment) {
                 _comment.removeFrom(map);
             });
-            comment.getLayers().forEach(function (commentLayer) {
-                if (commentLayer.layerType == 'textDrawing') {
-                    //commentLayer.addTo(map);
-                }
-            });
 
             window.map.MapCommentTool.Comments.editingComment = comment;
 
@@ -156,14 +150,6 @@ if (!Array.prototype.findIndex) {
             // Add all comment layer groups to map
             window.map.MapCommentTool.Comments.list.forEach(function (comment) {
                 comment.addTo(map);
-            });
-
-            window.map.MapCommentTool.Comments.list.forEach(function (comment) {
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == 'textArea') {
-                        layer.removeFrom(map);
-                    }
-                });
             });
 
             self.drawingCanvas.removeFrom(map);
@@ -305,18 +291,10 @@ if (!Array.prototype.findIndex) {
                     }
                 });
 
-                var viewCommentButton = L.DomUtil.create('u', '', commentLi);
-                viewCommentButton.innerHTML = " View ";
-                viewCommentButton.onclick = function () {
-                    map.flyToBounds(image._bounds, {
-                        animate: false
-                    });
-                };
-
                 var editCommentButton = L.DomUtil.create('u', '', commentLi);
 
                 if (map.MapCommentTool.Network.lockedComments.indexOf(comment.id) > -1) {
-                    editCommentButton.innerHTML = " Edit - LOCKED";
+                    editCommentButton.innerHTML = " Edit - LOCKED ";
                 } else {
                     editCommentButton.innerHTML = " Edit ";
                     editCommentButton.onclick = function () {
@@ -373,13 +351,6 @@ if (!Array.prototype.findIndex) {
             eraserSelectButton.onclick = function () {
                 window.map.MapCommentTool.Tools.setCurrentTool('eraser');
             };
-            var textSelectButton = L.DomUtil.create('button', 'controlbar-button controlbar-tool tool-text', drawingView);
-            var textSelectImage = L.DomUtil.create('img', '', textSelectButton);
-            textSelectImage.src = "assets/text.png";
-            textSelectButton.onclick = function () {
-                window.map.MapCommentTool.Tools.setCurrentTool('text');
-            };
-
         },
 
         startNewComment: function () {
@@ -610,33 +581,8 @@ if (!Array.prototype.findIndex) {
             });
             var comment = window.map.MapCommentTool.Comments.list[commentIndex];
             if (!comment.saveState) {
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == "textArea") {
-                        comment.removeLayer(layer);
-                        layer.removeFrom(map);
-                    }
-                });
                 window.map.MapCommentTool.Comments.list.pop();
-            } else {
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == "textArea" && layer.isNew) {
-                        comment.removeLayer(layer);
-                        layer.removeFrom(map);
-                    }
-                });
-
-                var eventDetails = {
-                    "detail": {
-                        "message": "A drawing is no longer being edited",
-                        "payload": {
-                            "id": comment.id,
-                        },
-                    }
-                };
-                event = new CustomEvent("edit-cancel", eventDetails);
-                document.dispatchEvent(event);
-
-            }
+            } 
             window.map.MapCommentTool.stopDrawingMode();
             return true;
         }
@@ -698,65 +644,12 @@ if (!Array.prototype.findIndex) {
             self.setCurrentTool(self.defaultTool, {
                 colour: 'red'
             });
-
-            // initialize textAreas
-            var comment = window.map.MapCommentTool.Comments.editingComment;
-            comment.getLayers().forEach(function (layer) {
-                if (layer.layerType == 'textArea') {
-                    var textDrawingLayer;
-                    layer.addTo(map);
-                    var myIcon = L.divIcon({
-                        className: 'text-comment-div',
-                        html: '<textarea autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" maxlength="300"></textarea>'
-                    });
-                    layer.setIcon(myIcon);
-                    layer._icon.children[0].value = layer.textVal;
-                    layer._icon.children[0].addEventListener('input', function () {
-                        layer._icon.children[0].rows = (layer._icon.children[0].value.match(/\n/g) || []).length + 1;
-                        var lengths = layer._icon.children[0].value.split('\n').map(function (line) {
-                            return line.length;
-                        });
-                        layer._icon.children[0].cols = Math.max.apply(null, lengths);
-                        textDrawingLayer = self.text.renderText(comment, layer.textId, layer._icon.children[0].value);
-                    });
-                    layer._icon.children[0].addEventListener('mouseover', function () {
-                        if (self.currentTool == 'eraser') {
-                            layer._icon.children[0].classList.add("eraser-mode-text");
-                        }
-                    });
-                    layer._icon.children[0].addEventListener('mouseout', function () {
-                        if (self.currentTool == 'eraser') {
-                            layer._icon.children[0].classList.remove("eraser-mode-text");
-                        }
-                    });
-                    layer._icon.children[0].addEventListener('click', function () {
-                        if (map.MapCommentTool.Tools.currentTool == 'eraser') {
-                            comment.removeLayer(layer);
-                            layer.removeFrom(map);
-                            var textDrawingLayer;
-                            comment.getLayers().forEach(function (layer2) {
-                                if (layer2.layerType == 'textDrawing' && layer2.textId == layer.textId) {
-                                    textDrawingLayer = layer2;
-                                }
-                            });
-                            comment.removeLayer(textDrawingLayer);
-                            textDrawingLayer.removeFrom(map);
-                        }
-                    });
-                    layer._icon.children[0].rows = (layer._icon.children[0].value.match(/\n/g) || []).length + 1;
-                    var lengths = layer._icon.children[0].value.split('\n').map(function (line) {
-                        return line.length;
-                    });
-                    layer._icon.children[0].cols = Math.max.apply(null, lengths);
-                }
-            });
         },
 
         off: function () {
             var self = this;
             self[self.currentTool].terminate();
             self.currentTool = '';
-            window.map.off('click', self.handleText);
 
         },
 
@@ -933,169 +826,23 @@ if (!Array.prototype.findIndex) {
             initialize: function () {
                 var self = this;
                 self.setListeners();
-                map.getPane('markerPane').style['z-index'] = 600;
-
             },
             terminate: function () {
                 var self = this;
                 var comment = window.map.MapCommentTool.Comments.editingComment;
-
-                map.getPane('markerPane').style['z-index'] = 300;
-                // save all text values to icon "textVal"s
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == 'textArea') {
-                        layer.textVal = layer._icon.children[0].value;
-                    }
-                });
-
-                state = 'addMarker';
             },
             handleText: function (e) {
                 var self = window.map.MapCommentTool.Tools.text;
                 var comment = window.map.MapCommentTool.Comments.editingComment;
                 var canvas = window.map.MapCommentTool.drawingCanvas._container;
                 var marker;
-                if (e.originalEvent.target.nodeName == 'CANVAS' || e.originalEvent.target.nodeName == "DIV") {
-                    if (window.map.MapCommentTool.Tools.currentTool == 'text' && self.state == 'addMarker') {
-                        var myIcon = L.divIcon({
-                            className: 'text-comment-div',
-                            html: '<textarea autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" maxlength="300"></textarea>'
-                        });
-                        self.marker = L.marker(e.latlng, {
-                            icon: myIcon
-                        });
-                        comment.addLayer(self.marker);
-                        self.marker.layerType = 'textArea';
-                        self.marker.isNew = true;
-
-                        // because of phantomJS
-                        if (e.originalEvent.target.nodeName == "DIV") {
-                            self.marker.pos = {
-                                x: 50,
-                                y: 100
-                            };
-                        } else {
-                            self.marker.pos = window.map.MapCommentTool.Util.getMousePos(e.originalEvent.clientX, e.originalEvent.clientY);
-                        }
-                        self.marker.addTo(map);
-                        self.marker.listenerSet = false;
-                        self.marker.textId = window.map.MapCommentTool.Util.generateGUID();
-
-                        // autosizing text boxes...
-                        // this is literally like the worst possible solution.
-                        comment.getLayers().forEach(function (layer) {
-                            if (layer.layerType == 'textArea' && !layer.listenerSet) {
-                                layer._icon.children[0].addEventListener('input', function () {
-                                    layer._icon.children[0].rows = (layer._icon.children[0].value.match(/\n/g) || []).length + 1;
-                                    var lengths = layer._icon.children[0].value.split('\n').map(function (line) {
-                                        return line.length;
-                                    });
-                                    layer._icon.children[0].cols = Math.max.apply(null, lengths);
-                                    self.renderText(comment, layer.textId, layer._icon.children[0].value);
-                                });
-                                layer._icon.children[0].addEventListener('mouseover', function () {
-                                    if (map.MapCommentTool.Tools.currentTool == 'eraser') {
-                                        layer._icon.children[0].classList.add("eraser-mode-text");
-                                    }
-                                });
-                                layer._icon.children[0].addEventListener('mouseout', function () {
-                                    if (map.MapCommentTool.Tools.currentTool == 'eraser') {
-                                        layer._icon.children[0].classList.remove("eraser-mode-text");
-                                    }
-                                });
-                                layer._icon.children[0].addEventListener('click', function () {
-                                    if (map.MapCommentTool.Tools.currentTool == 'eraser') {
-                                        comment.removeLayer(layer);
-                                        layer.removeFrom(map);
-                                        var textDrawingLayer;
-                                        comment.getLayers().forEach(function (layer2) {
-                                            if (layer2.layerType == 'textDrawing' && layer2.textId == layer.textId) {
-                                                textDrawingLayer = layer2;
-                                            }
-                                        });
-                                        comment.removeLayer(textDrawingLayer);
-                                        textDrawingLayer.removeFrom(map);
-                                    }
-                                });
-                                layer.listenerSet = true;
-                            }
-                        });
-
-                        self.marker._icon.children[0].focus();
-                        self.state = 'saveMarker';
-                    } else if (window.map.MapCommentTool.Tools.currentTool == 'text' && self.state == 'saveMarker') {
-                        // delete all empty text boxes.
-                        ///.....
-                        self.marker = '';
-                        self.state = 'addMarker';
-                    }
-                } else if (e.originalEvent.target.nodeName == 'TEXTAREA') {
-                    console.log('editing older text');
-                } else if (e.originalEvent.target.nodeName == 'BUTTON') {
-                    self.state = 'addMarker';
-                }
             },
             setListeners: function () {
                 var self = this;
                 var canvas = window.map.MapCommentTool.drawingCanvas._container;
                 var context = canvas.getContext('2d');
-                window.map.on('click', self.handleText);
             },
             renderText: function (comment, textId, stringVal) {
-                // render text to image
-                var canvas = window.map.MapCommentTool.textRenderingCanvas;
-                var ctx = canvas.getContext('2d');
-
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == 'textDrawing' && layer.textId == textId) {
-                        comment.removeLayer(layer);
-                        layer.removeFrom(map);
-                    }
-                });
-
-                var retLayer;
-
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == 'textArea' && layer.textId == textId) {
-                        if (stringVal.replace(/\s/g, "").length === 0) {
-                            comment.removeLayer(layer);
-                        } else {
-                            layer.isNew = false;
-                            var splitText = stringVal.split("\n");
-                            var lineNo = 0;
-                            var lineHeight = 47;
-                            canvas.height = splitText.length * lineHeight;
-                            var lengths = splitText.map(function (line) {
-                                return line.length;
-                            });
-                            canvas.width = Math.max.apply(null, lengths) * 25;
-                            ctx.font = "40px monospace";
-
-                            splitText.forEach(function (textLine) {
-                                ctx.fillText(textLine, 0, 29 + lineNo * (lineHeight + 1)); // figure out the relationship between this offset and the font size....
-                                lineNo++;
-                            });
-
-                            var img = ctx.canvas.toDataURL("data:image/png");
-                            var southWestX = layer.pos.x - 6;
-                            var southWestY = layer.pos.y + canvas.height;
-                            var northEastX = layer.pos.x + canvas.width - 6;
-                            var northEastY = layer.pos.y;
-
-                            var southWest = map.layerPointToLatLng([southWestX, southWestY]);
-                            var northEast = map.layerPointToLatLng([northEastX, northEastY]);
-
-                            var imageBounds = [southWest, northEast];
-                            var newTextImageOverlay = L.imageOverlay(img, imageBounds);
-                            newTextImageOverlay.layerType = 'textDrawing';
-                            newTextImageOverlay.textId = textId;
-                            comment.addLayer(newTextImageOverlay);
-                            retLayer = newTextImageOverlay;
-                        }
-                    }
-
-                    return retLayer;
-                });
             }
         }
 
