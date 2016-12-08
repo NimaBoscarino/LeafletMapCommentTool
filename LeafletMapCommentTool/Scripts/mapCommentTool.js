@@ -74,7 +74,6 @@ if (!Array.prototype.findIndex) {
 
                 onAdd: function (map) {
                     var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-
                     container.style.backgroundColor = 'white';
                     container.style.width = '40px';
                     container.style.height = '40px';
@@ -98,6 +97,7 @@ if (!Array.prototype.findIndex) {
             // Create sidebar container
             var container = self.ControlBar._container =
               L.DomUtil.create('div', 'leaflet-control-bar-' + self.ControlBar.options.position + ' leaflet-control-bar ' + visibileClass);
+
             var content = self.ControlBar._contentContainer;
 
             L.DomEvent
@@ -277,13 +277,14 @@ if (!Array.prototype.findIndex) {
             var self = this;
 
             var homeView = L.DomUtil.create('div', 'controlbar-view controlbar-home', self._container);
-            var closeButton = L.DomUtil.create('button', 'controlbar-button controlbar-close', homeView);
+            var closeButton = L.DomUtil.create('a', 'btn-floating btn-med waves-effect waves-light grey', homeView);
+            closeButton.innerHTML = "<i class='material-icons'>close</i>";
             closeButton.onclick = function () {
                 self.hide();
             };
             var br = L.DomUtil.create('br', '', homeView);
-            var newCommentButton = L.DomUtil.create('button', 'controlbar-button controlbar-new', homeView);
-            newCommentButton.innerHTML = "New Comment";
+            var newCommentButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light red', homeView);
+            newCommentButton.innerHTML = "<i class='material-icons'>create</i>";
             newCommentButton.onclick = function () {
                 return self.startNewComment();
             };
@@ -317,17 +318,13 @@ if (!Array.prototype.findIndex) {
 
         drawingView: function (commentId) {
             var self = this;
+
             var drawingView = L.DomUtil.create('div', 'controlbar-view controlbar-home', self._container);
             var br = L.DomUtil.create('br', '', drawingView);
-            var saveDrawingButton = L.DomUtil.create('button', 'controlbar-button controlbar-save', drawingView);
-            saveDrawingButton.innerHTML = "Save";
+            var saveDrawingButton = L.DomUtil.create('a', 'btn-floating btn-med waves-effect waves-light grey', drawingView);
+            saveDrawingButton.innerHTML = "<i class='material-icons'>save</i>";
             saveDrawingButton.onclick = function () {
                 self.saveDrawing(commentId);
-            };
-            var cancelDrawingButton = L.DomUtil.create('button', 'controlbar-button controlbar-cancel', drawingView);
-            cancelDrawingButton.innerHTML = "Cancel";
-            cancelDrawingButton.onclick = function () {
-                self.cancelDrawing(commentId);
             };
             var br2 = L.DomUtil.create('br', '', drawingView);
             var redPenSelectButton = L.DomUtil.create('button', 'controlbar-button controlbar-tool tool-pen', drawingView);

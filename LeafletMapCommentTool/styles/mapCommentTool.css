@@ -10,10 +10,8 @@
     -moz-box-sizing: border-box;
     box-sizing: border-box;
     z-index: 2100;
-    background-color: #c5e99b;
-    border: 5px solid #4b7f52;
     padding: 20px;
-    opacity: 0.8;
+    background-color: #393F4C;
 }
 
 /** TOP **/
