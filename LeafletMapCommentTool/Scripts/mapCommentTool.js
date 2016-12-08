@@ -55,6 +55,11 @@ if (!Array.prototype.findIndex) {
 
         addTo: function (map) {
             var self = this;
+            self.ownMap = map;
+
+            // Add root object as 'root' for all components
+            self.ControlBar.root = self;
+
             self.currentMode = 'map';
             var customControl = L.Control.extend({
 
@@ -123,11 +128,11 @@ if (!Array.prototype.findIndex) {
             self.ControlBar.currentView = self.ControlBar.displayControl('drawing', comment.id);
 
             // Remove all comment layer groups from map
-            window.map.MapCommentTool.Comments.list.forEach(function (_comment) {
+            self.Comments.list.forEach(function (_comment) {
                 _comment.removeFrom(map);
             });
 
-            window.map.MapCommentTool.Comments.editingComment = comment;
+            self.Comments.editingComment = comment;
 
             // turn on all drawing tools
             self.Tools.on();
@@ -145,10 +150,10 @@ if (!Array.prototype.findIndex) {
             // turn off all drawing tools
             self.Tools.off();
 
-            window.map.MapCommentTool.Comments.editingComment = '';
+            self.Comments.editingComment = '';
 
             // Add all comment layer groups to map
-            window.map.MapCommentTool.Comments.list.forEach(function (comment) {
+            self.Comments.list.forEach(function (comment) {
                 comment.addTo(map);
             });
 
@@ -175,7 +180,7 @@ if (!Array.prototype.findIndex) {
         show: function () {
             var self = this;
 
-            window.map.MapCommentTool.currentMode = 'controlBarHome';
+            self.root.currentMode = 'controlBarHome';
 
             self.visible = true;
 
@@ -186,14 +191,14 @@ if (!Array.prototype.findIndex) {
                 controls[i].style.visibility = 'hidden';
             }
 
-            map.dragging.disable();
-            map.touchZoom.disable();
-            map.doubleClickZoom.disable();
-            map.scrollWheelZoom.disable();
-            map.boxZoom.disable();
-            map.keyboard.disable();
-            if (map.tap) {
-                map.tap.disable();
+            self.root.ownMap.dragging.disable();
+            self.root.ownMap.touchZoom.disable();
+            self.root.ownMap.doubleClickZoom.disable();
+            self.root.ownMap.scrollWheelZoom.disable();
+            self.root.ownMap.boxZoom.disable();
+            self.root.ownMap.keyboard.disable();
+            if (self.root.ownMap.tap) {
+                self.root.ownMap.tap.disable();
             }
             document.getElementById('map').style.cursor = 'default';
 
@@ -205,7 +210,7 @@ if (!Array.prototype.findIndex) {
         hide: function (e) {
             var self = this;
 
-            window.map.MapCommentTool.currentMode = 'map';
+            self.root.currentMode = 'map';
 
             self.visible = false;
 
@@ -217,14 +222,14 @@ if (!Array.prototype.findIndex) {
             if (e) {
                 L.DomEvent.stopPropagation(e);
             }
-            map.dragging.enable();
-            map.touchZoom.enable();
-            map.doubleClickZoom.enable();
-            map.scrollWheelZoom.enable();
-            map.boxZoom.enable();
-            map.keyboard.enable();
-            if (map.tap) {
-                map.tap.enable();
+            self.root.ownMap.dragging.enable();
+            self.root.ownMap.touchZoom.enable();
+            self.root.ownMap.doubleClickZoom.enable();
+            self.root.ownMap.scrollWheelZoom.enable();
+            self.root.ownMap.boxZoom.enable();
+            self.root.ownMap.keyboard.enable();
+            if (self.root.ownMap.tap) {
+                self.root.ownMap.tap.enable();
             }
             document.getElementById('map').style.cursor = 'grab';
             // on success, should return true
@@ -281,7 +286,7 @@ if (!Array.prototype.findIndex) {
 
             var commentListDiv = L.DomUtil.create('div', 'comment-list-div', homeView);
             var commentList = L.DomUtil.create('ul', 'comment-list-ul', commentListDiv);
-            window.map.MapCommentTool.Comments.list.forEach(function (comment) {
+            self.root.Comments.list.forEach(function (comment) {
                 var commentLi = L.DomUtil.create('li', 'comment-list-li', commentList);
                 commentLi.innerHTML = comment.name;
                 var image;
@@ -293,7 +298,7 @@ if (!Array.prototype.findIndex) {
 
                 var editCommentButton = L.DomUtil.create('u', '', commentLi);
 
-                if (map.MapCommentTool.Network.lockedComments.indexOf(comment.id) > -1) {
+                if (self.root.Network.lockedComments.indexOf(comment.id) > -1) {
                     editCommentButton.innerHTML = " Edit - LOCKED ";
                 } else {
                     editCommentButton.innerHTML = " Edit ";
@@ -325,7 +330,7 @@ if (!Array.prototype.findIndex) {
             var redPenSelectImage = L.DomUtil.create('img', '', redPenSelectButton);
             redPenSelectImage.src = "assets/red-pen.png";
             redPenSelectButton.onclick = function () {
-                window.map.MapCommentTool.Tools.setCurrentTool('pen', {
+                self.root.Tools.setCurrentTool('pen', {
                     colour: 'red'
                 });
             };
@@ -333,7 +338,7 @@ if (!Array.prototype.findIndex) {
             var yellowPenSelectImage = L.DomUtil.create('img', '', yellowPenSelectButton);
             yellowPenSelectImage.src = "assets/yellow-pen.png";
             yellowPenSelectButton.onclick = function () {
-                window.map.MapCommentTool.Tools.setCurrentTool('pen', {
+                self.root.Tools.setCurrentTool('pen', {
                     colour: 'yellow'
                 });
             };
@@ -341,7 +346,7 @@ if (!Array.prototype.findIndex) {
             var blackPenSelectImage = L.DomUtil.create('img', '', blackPenSelectButton);
             blackPenSelectImage.src = "assets/black-pen.png";
             blackPenSelectButton.onclick = function () {
-                window.map.MapCommentTool.Tools.setCurrentTool('pen', {
+                self.root.Tools.setCurrentTool('pen', {
                     colour: 'black'
                 });
             };
@@ -349,7 +354,7 @@ if (!Array.prototype.findIndex) {
             var eraserSelectImage = L.DomUtil.create('img', '', eraserSelectButton);
             eraserSelectImage.src = "assets/eraser.png";
             eraserSelectButton.onclick = function () {
-                window.map.MapCommentTool.Tools.setCurrentTool('eraser');
+                self.root.Tools.setCurrentTool('eraser');
             };
         },
 
@@ -357,10 +362,10 @@ if (!Array.prototype.findIndex) {
             var self = this;
 
             // create new comment
-            var newComment = window.map.MapCommentTool.Comments.newComment();
+            var newComment = self.root.Comments.newComment();
 
             // trigger drawing mode
-            window.map.MapCommentTool.startDrawingMode(newComment);
+            self.root.startDrawingMode(newComment);
 
             return newComment;
         },
@@ -371,14 +376,14 @@ if (!Array.prototype.findIndex) {
             //map.flyToBounds(image._bounds, {animate: false});
 
             // trigger drawing mode
-            window.map.MapCommentTool.startDrawingMode(comment);
+            self.root.startDrawingMode(comment);
 
-            var canvas = window.map.MapCommentTool.drawingCanvas._container;
+            var canvas = self.root.drawingCanvas._container;
             var context = canvas.getContext('2d');
             var canvasTransformArray;
 
             // for phantomJS
-            if (map.MapCommentTool.PHANTOMTEST) {
+            if (self.root.PHANTOMTEST) {
                 canvasTransformArray = [0, 0];
             } else {
                 canvasTransformArray = canvas.style.transform.split(/,|\(|\)|px| /);
@@ -386,8 +391,8 @@ if (!Array.prototype.findIndex) {
 
             var imageObj = new Image();
 
-            var newWidth = image._image.width * map.getZoomScale(map.getZoom(), comment.zoomLevel);
-            var newHeight = image._image.height * map.getZoomScale(map.getZoom(), comment.zoomLevel);
+            var newWidth = image._image.width * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
+            var newHeight = image._image.height * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
 
             imageObj.onload = function () {
                 context.drawImage(imageObj, image._image._leaflet_pos.x, image._image._leaflet_pos.y, newWidth, newHeight);
@@ -413,11 +418,11 @@ if (!Array.prototype.findIndex) {
 
             var self = this;
 
-            var commentIndex = window.map.MapCommentTool.Comments.list.findIndex(function (comment) {
+            var commentIndex = self.root.Comments.list.findIndex(function (comment) {
                 return comment.id === commentId;
             });
 
-            var comment = window.map.MapCommentTool.Comments.list[commentIndex];
+            var comment = self.root.Comments.list[commentIndex];
 
 
 
@@ -425,17 +430,17 @@ if (!Array.prototype.findIndex) {
             if (!comment.saveState) {
                 comment.name = prompt("Please name your note", "Note") || "Note";
             }
-            comment.zoomLevel = map.getZoom();
+            comment.zoomLevel = self.root.ownMap.getZoom();
 
             // SAVING LOGIC
-            var context = window.map.MapCommentTool.drawingCanvas._ctx;
+            var context = self.root.drawingCanvas._ctx;
             var canvas = context.canvas;
 
             var canvasDrawing = canvas.toDataURL("data:image/png");
 
-            var imageBoundsXY = map.MapCommentTool.drawingCanvas._bounds;
-            var imageBoundsMinCoord = map.layerPointToLatLng(imageBoundsXY.min);
-            var imageBoundsMaxCoord = map.layerPointToLatLng(imageBoundsXY.max);
+            var imageBoundsXY = self.root.drawingCanvas._bounds;
+            var imageBoundsMinCoord = self.root.ownMap.layerPointToLatLng(imageBoundsXY.min);
+            var imageBoundsMaxCoord = self.root.ownMap.layerPointToLatLng(imageBoundsXY.max);
             var imageBounds = [
               [imageBoundsMinCoord.lat, imageBoundsMinCoord.lng],
               [imageBoundsMaxCoord.lat, imageBoundsMaxCoord.lng]
@@ -510,18 +515,18 @@ if (!Array.prototype.findIndex) {
             };
 
             if (oldDrawing) {
-                var mergeCanvas = window.map.MapCommentTool.mergeCanvas;
+                var mergeCanvas = self.root.mergeCanvas;
                 document.body.appendChild(canvas);
                 var mergeContext = mergeCanvas.getContext('2d');
 
-                var newX_left = map.latLngToLayerPoint(map.getBounds()._southWest).x;
-                var newX_right = map.latLngToLayerPoint(map.getBounds()._northEast).x;
-                var newY_top = map.latLngToLayerPoint(map.getBounds()._northEast).y;
-                var newY_bottom = map.latLngToLayerPoint(map.getBounds()._southWest).y;
-                var oldX_left = map.latLngToLayerPoint(oldDrawing._bounds._southWest).x;
-                var oldX_right = map.latLngToLayerPoint(oldDrawing._bounds._northEast).x;
-                var oldY_top = map.latLngToLayerPoint(oldDrawing._bounds._northEast).y;
-                var oldY_bottom = map.latLngToLayerPoint(oldDrawing._bounds._southWest).y;
+                var newX_left = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._southWest).x;
+                var newX_right = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._northEast).x;
+                var newY_top = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._northEast).y;
+                var newY_bottom = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._southWest).y;
+                var oldX_left = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._southWest).x;
+                var oldX_right = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._northEast).x;
+                var oldY_top = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._northEast).y;
+                var oldY_bottom = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._southWest).y;
 
                 var leftMost = Math.min(newX_left, oldX_left);
                 var rightMost = Math.max(newX_right, oldX_right);
@@ -534,8 +539,8 @@ if (!Array.prototype.findIndex) {
                 var oldImageToCanvas = new Image();
                 var newImageToCanvas = new Image();
                 var mergedDrawingLayer;
-                var newSouthWest = map.layerPointToLatLng([leftMost, bottomMost]);
-                var newNorthEast = map.layerPointToLatLng([rightMost, topMost]);
+                var newSouthWest = self.root.ownMap.layerPointToLatLng([leftMost, bottomMost]);
+                var newNorthEast = self.root.ownMap.layerPointToLatLng([rightMost, topMost]);
 
                 oldImageToCanvas.onload = function () {
                     mergeContext.drawImage(oldImageToCanvas, oldX_left - leftMost, oldY_top - topMost, oldX_right - oldX_left, oldY_bottom - oldY_top);
@@ -568,7 +573,7 @@ if (!Array.prototype.findIndex) {
                 document.dispatchEvent(event);
             }
 
-            window.map.MapCommentTool.stopDrawingMode();
+            self.root.stopDrawingMode();
 
             comment.saveState = true;
 
@@ -576,14 +581,15 @@ if (!Array.prototype.findIndex) {
         },
 
         cancelDrawing: function (commentId) {
-            var commentIndex = window.map.MapCommentTool.Comments.list.findIndex(function (comment) {
+            var self = this;
+            var commentIndex = self.root.Comments.list.findIndex(function (comment) {
                 return comment.id === commentId;
             });
-            var comment = window.map.MapCommentTool.Comments.list[commentIndex];
+            var comment = self.root.Comments.list[commentIndex];
             if (!comment.saveState) {
-                window.map.MapCommentTool.Comments.list.pop();
+                self.root.Comments.list.pop();
             } 
-            window.map.MapCommentTool.stopDrawingMode();
+            self.root.stopDrawingMode();
             return true;
         }
 
