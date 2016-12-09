@@ -185,3 +185,33 @@
 .user-editing-disabled {
     background-color: #f65555;
 }
+
+.red-pen-button {
+    font-size: 50px !important;
+    color: red !important;
+    background-color: #272B35;
+}
+
+.yellow-pen-button {
+    font-size: 50px !important;
+    color: yellow !important;
+    background-color: #272B35;
+}
+
+.black-pen-button {
+    font-size: 50px !important;
+    color: black !important;
+    background-color: #272B35;
+}
+
+.eraser-button {
+    font-size: 50px !important;
+    color: white !important;
+    background-color: #272B35;
+}
+
+.comments-div {
+    margin-top: 10px;
+    height: 650px;
+    overflow-y: scroll;
+}

@@ -289,31 +289,37 @@ if (!Array.prototype.findIndex) {
                 return self.startNewComment();
             };
 
-            var commentListDiv = L.DomUtil.create('div', 'comment-list-div', homeView);
-            var commentList = L.DomUtil.create('ul', 'comment-list-ul', commentListDiv);
-            self.root.Comments.list.forEach(function (comment) {
-                var commentLi = L.DomUtil.create('li', 'comment-list-li', commentList);
-                commentLi.innerHTML = comment.name;
-                var image;
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == 'drawing') {
-                        image = layer;
+            var commentListDiv = L.DomUtil.create('div', 'comments-div', homeView);
+
+            if (self.root.Comments.list.length > 0) {
+                var commentList = L.DomUtil.create('ul', 'collection', commentListDiv);
+                self.root.Comments.list.forEach(function (comment) {
+                    var commentItem = L.DomUtil.create('li', 'collection-item', commentList);
+                    var commentName = L.DomUtil.create('span', '', commentItem);
+                    commentName.innerHTML = comment.name;
+
+                    // add view button later 
+
+                    var commentEdit = L.DomUtil.create('a', 'waves-effect btn-flat', commentItem);
+
+                    var image;
+                    comment.getLayers().forEach(function (layer) {
+                        if (layer.layerType == 'drawing') {
+                            image = layer;
+                        }
+                    });
+
+                    if (self.root.Network.lockedComments.indexOf(comment.id) > -1) {
+                        commentEdit.className += " disabled"
+                        commentEdit.innerHTML = "<i class='material-icons'>edit</i>";
+                    } else {
+                        commentEdit.innerHTML = "<i class='material-icons'>edit</i>";
+                        commentEdit.onclick = function () {
+                            return self.editComment(comment, image);
+                        };
                     }
                 });
-
-                var editCommentButton = L.DomUtil.create('u', '', commentLi);
-
-                if (self.root.Network.lockedComments.indexOf(comment.id) > -1) {
-                    editCommentButton.innerHTML = " Edit - LOCKED ";
-                } else {
-                    editCommentButton.innerHTML = " Edit ";
-                    editCommentButton.onclick = function () {
-                        return self.editComment(comment, image);
-                    };
-                }
-
-            });
-
+            }
         },
 
         drawingView: function (commentId) {
@@ -327,33 +333,32 @@ if (!Array.prototype.findIndex) {
                 self.saveDrawing(commentId);
             };
             var br2 = L.DomUtil.create('br', '', drawingView);
-            var redPenSelectButton = L.DomUtil.create('button', 'controlbar-button controlbar-tool tool-pen', drawingView);
-            var redPenSelectImage = L.DomUtil.create('img', '', redPenSelectButton);
-            redPenSelectImage.src = "assets/red-pen.png";
+            var redPenSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
+            redPenSelectButton.innerHTML = '<i class="material-icons red-pen-button">edit</i>';
             redPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'red'
                 });
             };
-            var yellowPenSelectButton = L.DomUtil.create('button', 'controlbar-button controlbar-tool tool-pen', drawingView);
-            var yellowPenSelectImage = L.DomUtil.create('img', '', yellowPenSelectButton);
-            yellowPenSelectImage.src = "assets/yellow-pen.png";
+
+            var yellowPenSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
+            yellowPenSelectButton.innerHTML = '<i class="material-icons yellow-pen-button">edit</i>';
             yellowPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'yellow'
                 });
             };
-            var blackPenSelectButton = L.DomUtil.create('button', 'controlbar-button controlbar-tool tool-pen', drawingView);
-            var blackPenSelectImage = L.DomUtil.create('img', '', blackPenSelectButton);
-            blackPenSelectImage.src = "assets/black-pen.png";
+
+            var blackPenSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
+            blackPenSelectButton.innerHTML = '<i class="material-icons black-pen-button">edit</i>';
             blackPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'black'
                 });
             };
-            var eraserSelectButton = L.DomUtil.create('button', 'controlbar-button controlbar-tool tool-eraser', drawingView);
-            var eraserSelectImage = L.DomUtil.create('img', '', eraserSelectButton);
-            eraserSelectImage.src = "assets/eraser.png";
+
+            var eraserSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
+            eraserSelectButton.innerHTML = '<i class="material-icons eraser-button">crop_5_4</i>';
             eraserSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('eraser');
             };
