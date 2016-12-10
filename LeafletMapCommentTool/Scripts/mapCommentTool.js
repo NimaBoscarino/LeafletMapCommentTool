@@ -330,38 +330,41 @@ if (!Array.prototype.findIndex) {
                 self.saveDrawing(commentId);
             };
             var br = L.DomUtil.create('br', '', drawingView);
-            var redPenSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
-            redPenSelectButton.innerHTML = '<i class="material-icons red-pen-button">edit</i>';
+
+            var toolbox = L.DomUtil.create('div', 'toolbox', drawingView);
+
+            var redPenSelectButton = L.DomUtil.create('img', 'tool', toolbox);
+            redPenSelectButton.src = 'http://localhost:57180/assets/red-pen.png';
             redPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'red'
                 });
             };
 
-            var yellowPenSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
-            yellowPenSelectButton.innerHTML = '<i class="material-icons yellow-pen-button">edit</i>';
+            var yellowPenSelectButton = L.DomUtil.create('img', 'tool', toolbox);
+            yellowPenSelectButton.src = 'http://localhost:57180/assets/yellow-pen.png';
             yellowPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'yellow'
                 });
             };
 
-            var blackPenSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
-            blackPenSelectButton.innerHTML = '<i class="material-icons black-pen-button">edit</i>';
+            var blackPenSelectButton = L.DomUtil.create('img', 'tool', toolbox);
+            blackPenSelectButton.src = 'http://localhost:57180/assets/black-pen.png';
             blackPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'black'
                 });
             };
 
-            var eraserSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
-            eraserSelectButton.innerHTML = '<i class="material-icons eraser-button">crop_5_4</i>';
+            var eraserSelectButton = L.DomUtil.create('img', 'tool', toolbox);
+            eraserSelectButton.src = 'http://localhost:57180/assets/eraser.png';
             eraserSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('eraser');
             };
 
-            var textSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
-            textSelectButton.innerHTML = '<i class="material-icons text-button">text_format</i>';
+            var textSelectButton = L.DomUtil.create('img', 'tool', toolbox);
+            textSelectButton.src = 'http://localhost:57180/assets/text.png';
             textSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('text');
             };
@@ -660,6 +663,9 @@ if (!Array.prototype.findIndex) {
             self.eraser.root = self.root;
             self.text.root = self.root;
 
+            self.pen.setListeners();
+            self.eraser.setListeners();
+            self.text.setListeners();
 
             self.setCurrentTool(self.defaultTool, {
                 colour: 'red'
@@ -701,8 +707,6 @@ if (!Array.prototype.findIndex) {
                 var self = this;
                 self.colour = options.colour;
                 self.root.drawingCanvas._container.classList.add("drawing-canvas-" + self.colour + "-pen");
-
-                self.setListeners();
             },
             terminate: function () {
                 var self = this;
@@ -774,7 +778,6 @@ if (!Array.prototype.findIndex) {
             lastY: -1,
             initialize: function () {
                 var self = this;
-                self.setListeners();
                 self.root.ownMap.getPane('markerPane').style['z-index'] = 600;
             },
             terminate: function () {
@@ -846,7 +849,6 @@ if (!Array.prototype.findIndex) {
             state: 'addMarker',
             initialize: function () {
                 var self = this;
-                self.setListeners();
             },
             terminate: function () {
                 var self = this;
@@ -862,6 +864,13 @@ if (!Array.prototype.findIndex) {
                 var self = this;
                 var canvas = self.root.drawingCanvas._container;
                 var context = canvas.getContext('2d');
+
+                canvas.addEventListener('click', function (e) {
+                    if (self.root.Tools.currentTool == 'text') {
+                        console.log('click text');
+                    }
+                }, false);
+
             },
             renderText: function (comment, textId, stringVal) {
             }

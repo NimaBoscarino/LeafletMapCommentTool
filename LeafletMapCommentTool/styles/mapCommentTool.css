@@ -235,3 +235,17 @@
    text-decoration: underline;
    font-size: 2em;
 }
+
+.toolbox {
+
+    background-color: lightgrey;
+    padding: 13px;
+    text-align: center;
+    border-radius: 4px;
+
+}
+
+.tool {
+    cursor: pointer;
+    margin: 3px;
+}
