@@ -277,14 +277,14 @@ if (!Array.prototype.findIndex) {
             var self = this;
 
             var homeView = L.DomUtil.create('div', 'controlbar-view controlbar-home', self._container);
-            var closeButton = L.DomUtil.create('a', 'btn-floating btn-med waves-effect waves-light grey', homeView);
-            closeButton.innerHTML = "<i class='material-icons'>close</i>";
-            closeButton.onclick = function () {
+            var close = this._closeButton = L.DomUtil.create('a', 'close', homeView);
+            close.innerHTML = '&times;';
+            close.onclick = function () {
                 self.hide();
             };
             var br = L.DomUtil.create('br', '', homeView);
-            var newCommentButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light red', homeView);
-            newCommentButton.innerHTML = "<i class='material-icons'>create</i>";
+            var newCommentButton = L.DomUtil.create('a', 'new-comment', homeView);
+            newCommentButton.innerHTML = "New Comment";
             newCommentButton.onclick = function () {
                 return self.startNewComment();
             };
@@ -300,7 +300,7 @@ if (!Array.prototype.findIndex) {
 
                     // add view button later 
 
-                    var commentEdit = L.DomUtil.create('a', 'waves-effect btn-flat', commentItem);
+                    var commentEdit = L.DomUtil.create('a', 'edit-button', commentItem);
 
                     var image;
                     comment.getLayers().forEach(function (layer) {
@@ -309,11 +309,10 @@ if (!Array.prototype.findIndex) {
                         }
                     });
 
+                    commentEdit.innerHTML = "EDIT";
                     if (self.root.Network.lockedComments.indexOf(comment.id) > -1) {
                         commentEdit.className += " disabled"
-                        commentEdit.innerHTML = "<i class='material-icons'>edit</i>";
                     } else {
-                        commentEdit.innerHTML = "<i class='material-icons'>edit</i>";
                         commentEdit.onclick = function () {
                             return self.editComment(comment, image);
                         };
@@ -324,15 +323,13 @@ if (!Array.prototype.findIndex) {
 
         drawingView: function (commentId) {
             var self = this;
-
             var drawingView = L.DomUtil.create('div', 'controlbar-view controlbar-home', self._container);
-            var br = L.DomUtil.create('br', '', drawingView);
-            var saveDrawingButton = L.DomUtil.create('a', 'btn-floating btn-med waves-effect waves-light grey', drawingView);
-            saveDrawingButton.innerHTML = "<i class='material-icons'>save</i>";
-            saveDrawingButton.onclick = function () {
+            var close = this._closeButton = L.DomUtil.create('a', 'close', drawingView);
+            close.innerHTML = '&times;';
+            close.onclick = function () {
                 self.saveDrawing(commentId);
             };
-            var br2 = L.DomUtil.create('br', '', drawingView);
+            var br = L.DomUtil.create('br', '', drawingView);
             var redPenSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
             redPenSelectButton.innerHTML = '<i class="material-icons red-pen-button">edit</i>';
             redPenSelectButton.onclick = function () {
@@ -361,6 +358,12 @@ if (!Array.prototype.findIndex) {
             eraserSelectButton.innerHTML = '<i class="material-icons eraser-button">crop_5_4</i>';
             eraserSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('eraser');
+            };
+
+            var textSelectButton = L.DomUtil.create('a', 'btn-floating btn-large waves-effect waves-light', drawingView);
+            textSelectButton.innerHTML = '<i class="material-icons text-button">text_format</i>';
+            textSelectButton.onclick = function () {
+                self.root.Tools.setCurrentTool('text');
             };
         },
 

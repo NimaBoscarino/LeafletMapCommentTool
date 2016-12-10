@@ -11,7 +11,9 @@
     box-sizing: border-box;
     z-index: 2100;
     padding: 20px;
-    background-color: #393F4C;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 7px rgba(0, 0, 0, 0.65);
 }
 
 /** TOP **/
@@ -71,17 +73,18 @@
 
 /** RIGHT **/
 .leaflet-control-bar-right.leaflet-control-bar {
-    height:100%;
+    height:90%;
     width: 20%;
     right: -20%;
     transition: right 0.5s;
+    top: 5%;
+    bottom: 10%;
 }
 .leaflet-control-bar-right.leaflet-control-bar.visible {
-    right: 0;
+    right: 2%;
     transition: right 0.5s;
 }
 .leaflet-control-bar-right.leaflet-control-bar.visible ~ .leaflet-right {
-    right: 15%;
     transition: right 0.5s;
 }
 
@@ -214,4 +217,21 @@
     margin-top: 10px;
     height: 650px;
     overflow-y: scroll;
+}
+
+.close {
+    color: black !important;
+    font-size: 3em;
+}
+
+.edit-button {
+    margin-left: 5px;
+    margin-right: 5px;
+
+}
+
+.new-comment {
+   color: black !important;
+   text-decoration: underline;
+   font-size: 2em;
 }
