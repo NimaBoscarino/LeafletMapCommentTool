@@ -136,7 +136,7 @@ if (!Array.prototype.findIndex) {
                 _comment.removeFrom(map);
             });
 
-            self.Comments.editingComment = comment;
+            self.Comments.editingComment = comment.id;
 
             // turn on all drawing tools
             self.Tools.on();
@@ -389,7 +389,7 @@ if (!Array.prototype.findIndex) {
 
             // trigger drawing mode
             self.root.startDrawingMode(comment);
-
+            self.root.Comments.editingComment = comment;
             var canvas = self.root.drawingCanvas._container;
             var context = canvas.getContext('2d');
             var canvasTransformArray;
@@ -435,7 +435,8 @@ if (!Array.prototype.findIndex) {
             });
 
             var comment = self.root.Comments.list[commentIndex];
-
+            console.log(commentId);
+            console.log(comment);
 
 
             // prompt for title saving...
@@ -611,7 +612,7 @@ if (!Array.prototype.findIndex) {
     MapCommentTool.Comments = {
 
         list: [],
-        editingComment: {},
+        editingComment: '',
 
         saved: function (comment) {
             var self = this;
@@ -623,7 +624,7 @@ if (!Array.prototype.findIndex) {
             var comment = L.layerGroup();
             comment.saveState = false;
             comment.id = self.root.Util.generateGUID();
-
+            self.editingComment = comment;
             self.list.push(comment);
             return comment;
         }
@@ -867,7 +868,13 @@ if (!Array.prototype.findIndex) {
 
                 canvas.addEventListener('click', function (e) {
                     if (self.root.Tools.currentTool == 'text') {
-                        console.log('click text');
+                        var coords = self.root.ownMap.layerPointToLatLng([e.layerX, e.layerY]);
+
+                        // needs to be added to a layer group for text... not to map
+                        var marker = L.marker(coords).addTo(self.root.ownMap);
+                        self.root.ControlBar.saveDrawing(self.root.Comments.editingComment.id);
+                        self.root.ownMap.setView(marker);
+
                     }
                 }, false);
 
