@@ -673,11 +673,14 @@ if (!Array.prototype.findIndex) {
             } else {
 
               var canvas = self.root.drawingCanvas._container;
-              var clickExitTextMode = function(e) {
+              var clickCanvasEndText = function(e) {
                 console.log('exiting text mode');
-                canvas.removeEventListener('click', clickExitTextMode, false);
+                options.textAreaMarker.removeFrom(self.root.ownMap);
+                canvas.removeEventListener('click', clickCanvasEndText, false);
+                self.root.Tools.on();
+                self.root.Comments.editingComment.addTo(self.root.ownMap);
               }
-              canvas.addEventListener('click', clickExitTextMode, false);
+              canvas.addEventListener('click', clickCanvasEndText, false);
 
             }
 
@@ -889,7 +892,7 @@ if (!Array.prototype.findIndex) {
                 });
 
                 var inputRenderText = function(e) {
-                  self.renderText(comment, id, textBox.value);
+                  self.renderText(comment, id, textBox.value, marker);
                 }
 
                 var clickAddText = function(e) {
@@ -923,7 +926,7 @@ if (!Array.prototype.findIndex) {
                     // start editing again
                     // ...
 
-                    self.root.ControlBar.editComment(comment, image, {addText: true});
+                    self.root.ControlBar.editComment(comment, image, {addText: true, textAreaMarker: marker});
                     self.root.Tools.setCurrentTool('text', {listeners: false});
                     textBox = document.getElementById(id);
                     textBox.focus();
@@ -940,6 +943,8 @@ if (!Array.prototype.findIndex) {
               var textBox = document.getElementById(textId);
               var boundingRect = textBox.getBoundingClientRect();
 
+              console.log(marker);
+
               //remove old drawing
               comment.getLayers().forEach(function(layer) {
                 if (layer.layerType == 'textDrawing' && layer.textId == textId) {
@@ -953,9 +958,9 @@ if (!Array.prototype.findIndex) {
               //hardcoded for now
               canvas.height = 1000;
               canvas.width = 1000;
-              var lineHeight = 37;
-              var colWidth = 23;
-              ctx.font = "40px monospace";
+              var lineHeight = 25;
+              var colWidth = 18;
+              ctx.font = "30px monospace";
               var col = 0;
               var row = 0;
 
@@ -970,13 +975,13 @@ if (!Array.prototype.findIndex) {
 
               var img = ctx.canvas.toDataURL("data:image/png");
 
-              var southWest = self.root.ownMap.layerPointToLatLng([boundingRect.top + 1000, boundingRect.left]);
-              var northEast = self.root.ownMap.layerPointToLatLng([boundingRect.top, boundingRect.left + 1000]);
+              var markerToPoint = self.root.ownMap.latLngToLayerPoint(marker._latlng);
+              var southWest = self.root.ownMap.layerPointToLatLng([markerToPoint.x + 1000, markerToPoint.y + 1000]);
+              var northEast = marker._latlng;
               var newTextImageOverlay = L.imageOverlay(img, [southWest, northEast]);
               newTextImageOverlay.layerType = 'textDrawing';
               newTextImageOverlay.textId = textId;
               comment.addLayer(newTextImageOverlay);
-              comment.addTo(self.root.ownMap);
           }
       }
     };
