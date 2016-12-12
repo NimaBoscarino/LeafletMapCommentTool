@@ -129,14 +129,14 @@ if (!Array.prototype.findIndex) {
             // set mode to "drawing"
             self.currentMode = 'drawing';
             // set toolbar view to "drawing"
-            self.ControlBar.currentView = self.ControlBar.displayControl('drawing', comment.id);
+            self.ControlBar.currentView = self.ControlBar.displayControl('drawing', comment);
 
             // Remove all comment layer groups from map
             self.Comments.list.forEach(function (_comment) {
                 _comment.removeFrom(map);
             });
 
-            self.Comments.editingComment = comment.id;
+            self.Comments.editingComment = comment;
 
             // turn on all drawing tools
             self.Tools.on();
@@ -253,7 +253,7 @@ if (!Array.prototype.findIndex) {
             //self.fire(self.ControlBar.isVisible() ? 'shown' : 'hidden');
         },
 
-        displayControl: function (mode, commentId) {
+        displayControl: function (mode, comment) {
             var self = this;
             // clear the display
             L.DomUtil.empty(self._container);
@@ -263,7 +263,7 @@ if (!Array.prototype.findIndex) {
                     self.homeView();
                     break;
                 case 'drawing':
-                    self.drawingView(commentId);
+                    self.drawingView(comment);
                     break;
                 default:
 
@@ -298,7 +298,7 @@ if (!Array.prototype.findIndex) {
                     var commentName = L.DomUtil.create('span', '', commentItem);
                     commentName.innerHTML = comment.name;
 
-                    // add view button later 
+                    // add view button later
 
                     var commentEdit = L.DomUtil.create('a', 'edit-button', commentItem);
 
@@ -321,20 +321,20 @@ if (!Array.prototype.findIndex) {
             }
         },
 
-        drawingView: function (commentId) {
+        drawingView: function (comment) {
             var self = this;
             var drawingView = L.DomUtil.create('div', 'controlbar-view controlbar-home', self._container);
             var close = this._closeButton = L.DomUtil.create('a', 'close', drawingView);
             close.innerHTML = '&times;';
             close.onclick = function () {
-                self.saveDrawing(commentId);
+                self.saveDrawing(comment);
             };
             var br = L.DomUtil.create('br', '', drawingView);
 
             var toolbox = L.DomUtil.create('div', 'toolbox', drawingView);
 
             var redPenSelectButton = L.DomUtil.create('img', 'tool', toolbox);
-            redPenSelectButton.src = 'http://localhost:57180/assets/red-pen.png';
+            redPenSelectButton.src = 'assets/red-pen.png';
             redPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'red'
@@ -342,7 +342,7 @@ if (!Array.prototype.findIndex) {
             };
 
             var yellowPenSelectButton = L.DomUtil.create('img', 'tool', toolbox);
-            yellowPenSelectButton.src = 'http://localhost:57180/assets/yellow-pen.png';
+            yellowPenSelectButton.src = 'assets/yellow-pen.png';
             yellowPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'yellow'
@@ -350,7 +350,7 @@ if (!Array.prototype.findIndex) {
             };
 
             var blackPenSelectButton = L.DomUtil.create('img', 'tool', toolbox);
-            blackPenSelectButton.src = 'http://localhost:57180/assets/black-pen.png';
+            blackPenSelectButton.src = 'assets/black-pen.png';
             blackPenSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('pen', {
                     colour: 'black'
@@ -358,13 +358,13 @@ if (!Array.prototype.findIndex) {
             };
 
             var eraserSelectButton = L.DomUtil.create('img', 'tool', toolbox);
-            eraserSelectButton.src = 'http://localhost:57180/assets/eraser.png';
+            eraserSelectButton.src = 'assets/eraser.png';
             eraserSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('eraser');
             };
 
             var textSelectButton = L.DomUtil.create('img', 'tool', toolbox);
-            textSelectButton.src = 'http://localhost:57180/assets/text.png';
+            textSelectButton.src = 'assets/text.png';
             textSelectButton.onclick = function () {
                 self.root.Tools.setCurrentTool('text');
             };
@@ -426,18 +426,9 @@ if (!Array.prototype.findIndex) {
             return comment;
         },
 
-        saveDrawing: function (commentId) {
+        saveDrawing: function (comment) {
 
             var self = this;
-
-            var commentIndex = self.root.Comments.list.findIndex(function (comment) {
-                return comment.id === commentId;
-            });
-
-            var comment = self.root.Comments.list[commentIndex];
-            console.log(commentId);
-            console.log(comment);
-
 
             // prompt for title saving...
             if (!comment.saveState) {
@@ -601,7 +592,7 @@ if (!Array.prototype.findIndex) {
             var comment = self.root.Comments.list[commentIndex];
             if (!comment.saveState) {
                 self.root.Comments.list.pop();
-            } 
+            }
             self.root.stopDrawingMode();
             return true;
         }
@@ -624,6 +615,7 @@ if (!Array.prototype.findIndex) {
             var comment = L.layerGroup();
             comment.saveState = false;
             comment.id = self.root.Util.generateGUID();
+            comment.textLayerGroup = L.layerGroup();
             self.editingComment = comment;
             self.list.push(comment);
             return comment;
@@ -853,7 +845,6 @@ if (!Array.prototype.findIndex) {
             },
             terminate: function () {
                 var self = this;
-                var comment = self.root.Comments.editingComment;
             },
             handleText: function (e) {
                 var self = this;
@@ -865,15 +856,21 @@ if (!Array.prototype.findIndex) {
                 var self = this;
                 var canvas = self.root.drawingCanvas._container;
                 var context = canvas.getContext('2d');
-
+                var comment = self.root.Comments.editingComment;
+                console.log(comment);
                 canvas.addEventListener('click', function (e) {
                     if (self.root.Tools.currentTool == 'text') {
-                        var coords = self.root.ownMap.layerPointToLatLng([e.layerX, e.layerY]);
+                        var coords = self.root.ownMap.containerPointToLatLng([e.layerX, e.layerY]);
 
                         // needs to be added to a layer group for text... not to map
-                        var marker = L.marker(coords).addTo(self.root.ownMap);
-                        self.root.ControlBar.saveDrawing(self.root.Comments.editingComment.id);
-                        self.root.ownMap.setView(marker);
+                        comment.textLayerGroup.getLayers().forEach(function(layer) {
+                          layer.removeFrom(self.root.ownMap);
+                        });
+                        var marker = L.marker(coords);
+                        marker.addTo(comment.textLayerGroup);
+                        marker.addTo(map);
+                        self.root.ControlBar.saveDrawing(comment);
+                        self.root.ownMap.setView(marker._latlng, map.getZoom(), { animate: false });
 
                     }
                 }, false);
