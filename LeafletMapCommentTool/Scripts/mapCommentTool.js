@@ -115,7 +115,7 @@ if (!Array.prototype.findIndex) {
             map.MapCommentTool = MapCommentTool;
         },
 
-        startDrawingMode: function (comment) {
+        startDrawingMode: function (comment, options) {
             var self = this;
             // spawn a drawing canvas
             self.drawingCanvas = L.canvas({
@@ -139,7 +139,11 @@ if (!Array.prototype.findIndex) {
             self.Comments.editingComment = comment;
 
             // turn on all drawing tools
-            self.Tools.on();
+            if (options) {
+              self.Tools.on(options);
+            } else {
+              self.Tools.on();
+            }
 
         },
 
@@ -382,13 +386,17 @@ if (!Array.prototype.findIndex) {
             return newComment;
         },
 
-        editComment: function (comment, image) {
+        editComment: function (comment, image, options) {
             var self = this;
             // fly to comment
             //map.flyToBounds(image._bounds, {animate: false});
 
             // trigger drawing mode
-            self.root.startDrawingMode(comment);
+            if (options) {
+              self.root.startDrawingMode(comment, options);
+            } else {
+              self.root.startDrawingMode(comment);
+            }
             self.root.Comments.editingComment = comment;
             var canvas = self.root.drawingCanvas._container;
             var context = canvas.getContext('2d');
@@ -652,15 +660,26 @@ if (!Array.prototype.findIndex) {
         toolList: ['pen', 'eraser', 'text'],
         defaultTool: 'pen',
 
-        on: function () {
+        on: function (options) {
             var self = this;
             self.pen.root = self.root;
             self.eraser.root = self.root;
             self.text.root = self.root;
 
-            self.pen.setListeners();
-            self.eraser.setListeners();
-            self.text.setListeners();
+            if (!options) {
+              self.pen.setListeners();
+              self.eraser.setListeners();
+              self.text.setListeners();
+            } else {
+
+              var canvas = self.root.drawingCanvas._container;
+              var clickExitTextMode = function(e) {
+                console.log('exiting text mode');
+                canvas.removeEventListener('click', clickExitTextMode, false);
+              }
+              canvas.addEventListener('click', clickExitTextMode, false);
+
+            }
 
             self.setCurrentTool(self.defaultTool, {
                 colour: 'red'
@@ -860,66 +879,80 @@ if (!Array.prototype.findIndex) {
                 var context = canvas.getContext('2d');
                 var comment = self.root.Comments.editingComment;
                 var image;
+                var id;
+                var textBox;
+                var marker;
                 comment.getLayers().forEach(function (layer) {
                     if (layer.layerType == 'drawing') {
                         image = layer;
                     }
                 });
 
-                console.log(comment);
-                canvas.addEventListener('click', function (e) {
-                    if (self.root.Tools.currentTool == 'text') {
-                        var coords = self.root.ownMap.containerPointToLatLng([e.layerX, e.layerY]);
+                var inputRenderText = function(e) {
+                  self.renderText(comment, id, textBox.value);
+                }
 
-                        // needs to be added to a layer group for text... not to map
-                        comment.textLayerGroup.getLayers().forEach(function(layer) {
-                          layer.removeFrom(self.root.ownMap);
-                        });
+                var clickAddText = function(e) {
+                  if (self.root.Tools.currentTool == 'text') {
+                    canvas = self.root.drawingCanvas._container;
 
-                        var id = self.root.Util.generateGUID();
+                    var coords = self.root.ownMap.containerPointToLatLng([e.layerX, e.layerY]);
 
-                        var myIcon = L.divIcon({
-                          className: 'text-comment-div',
-                          html: '<textarea id="' + id + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" rows="6" cols="30" maxlength="130"></textarea>'
-                        });
+                    // needs to be added to a layer group for text... not to map
+                    comment.textLayerGroup.getLayers().forEach(function(layer) {
+                      layer.removeFrom(self.root.ownMap);
+                    });
 
-                        var marker = L.marker(coords, {
-                          icon: myIcon
-                        });
-                        marker.textId = id;
-                        marker.addTo(comment.textLayerGroup);
-                        marker.addTo(map);
-                        self.root.ControlBar.saveDrawing(comment);
-                        self.root.ownMap.setView(marker._latlng, map.getZoom(), { animate: false });
-                        self.root.ownMap.panBy([200, 150], { animate: false });
+                    id = self.root.Util.generateGUID();
 
-                        // start editing again
-                        // ...
+                    var myIcon = L.divIcon({
+                      className: 'text-comment-div',
+                      html: '<textarea id="' + id + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" rows="6" cols="30" maxlength="130"></textarea>'
+                    });
 
-                        self.root.ControlBar.editComment(comment, image);
-                        var textBox = document.getElementById(id);
-                        textBox.focus();
-                        textBox.addEventListener('input', function() {
-                          self.renderText(comment, id, textBox.value);
-                        });
-                    }
-                }, false);
+                    marker = L.marker(coords, {
+                      icon: myIcon
+                    });
+                    marker.textId = id;
+                    marker.addTo(comment.textLayerGroup);
+                    marker.addTo(self.root.ownMap);
+                    self.root.ControlBar.saveDrawing(comment);
+                    self.root.ownMap.setView(marker._latlng, map.getZoom(), { animate: false });
+                    self.root.ownMap.panBy([200, 150], { animate: false });
+
+                    // start editing again
+                    // ...
+
+                    self.root.ControlBar.editComment(comment, image, {addText: true});
+                    self.root.Tools.setCurrentTool('text', {listeners: false});
+                    textBox = document.getElementById(id);
+                    textBox.focus();
+                    textBox.addEventListener('input', inputRenderText, false);
+                  }
+                }
+
+
+                canvas.addEventListener('click', clickAddText, false);
 
             },
-            renderText: function (comment, textId, val) {
+            renderText: function (comment, textId, val, marker) {
+              var self = this;
+              var textBox = document.getElementById(textId);
+              var boundingRect = textBox.getBoundingClientRect();
+
               //remove old drawing
               comment.getLayers().forEach(function(layer) {
                 if (layer.layerType == 'textDrawing' && layer.textId == textId) {
                   comment.removeLayer(layer);
-                  layer.removeFrom(map);
+                  layer.removeFrom(self.root.ownMap);
                 }
               });
 
               var canvas = document.createElement('canvas');
               var ctx = canvas.getContext('2d');
               //hardcoded for now
-              canvas.height = 500;
-              canvas.width = 500;
+              canvas.height = 1000;
+              canvas.width = 1000;
               var lineHeight = 37;
               var colWidth = 23;
               ctx.font = "40px monospace";
@@ -936,11 +969,14 @@ if (!Array.prototype.findIndex) {
               });
 
               var img = ctx.canvas.toDataURL("data:image/png");
-              // TEMP
-              var newTextImageOverlay = L.imageOverlay(img, map.getBounds()).addTo(map);
 
-
-              console.log(img);
+              var southWest = self.root.ownMap.layerPointToLatLng([boundingRect.top + 1000, boundingRect.left]);
+              var northEast = self.root.ownMap.layerPointToLatLng([boundingRect.top, boundingRect.left + 1000]);
+              var newTextImageOverlay = L.imageOverlay(img, [southWest, northEast]);
+              newTextImageOverlay.layerType = 'textDrawing';
+              newTextImageOverlay.textId = textId;
+              comment.addLayer(newTextImageOverlay);
+              comment.addTo(self.root.ownMap);
           }
       }
     };
