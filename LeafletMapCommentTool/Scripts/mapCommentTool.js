@@ -401,16 +401,19 @@ if (!Array.prototype.findIndex) {
                 canvasTransformArray = canvas.style.transform.split(/,|\(|\)|px| /);
             }
 
-            var imageObj = new Image();
+            if (image) {
+              var imageObj = new Image();
 
-            var newWidth = image._image.width * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
-            var newHeight = image._image.height * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
+              var newWidth = image._image.width * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
+              var newHeight = image._image.height * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
 
-            imageObj.onload = function () {
-                context.drawImage(imageObj, image._image._leaflet_pos.x, image._image._leaflet_pos.y, newWidth, newHeight);
-            };
+              imageObj.onload = function () {
+                  context.drawImage(imageObj, image._image._leaflet_pos.x, image._image._leaflet_pos.y, newWidth, newHeight);
+              };
 
-            imageObj.src = image._image.src;
+              imageObj.src = image._image.src;
+            }
+
 
             var eventDetails = {
                 "detail": {
@@ -569,8 +572,7 @@ if (!Array.prototype.findIndex) {
                     document.dispatchEvent(event);
 
                 };
-
-                oldImageToCanvas.src = oldDrawing._image.src;
+                oldImageToCanvas.src = oldDrawing._url;
             } else {
                 var event = prepareEvent(comment.getLayers());
                 // Dispatch/Trigger/Fire the event
@@ -857,6 +859,13 @@ if (!Array.prototype.findIndex) {
                 var canvas = self.root.drawingCanvas._container;
                 var context = canvas.getContext('2d');
                 var comment = self.root.Comments.editingComment;
+                var image;
+                comment.getLayers().forEach(function (layer) {
+                    if (layer.layerType == 'drawing') {
+                        image = layer;
+                    }
+                });
+
                 console.log(comment);
                 canvas.addEventListener('click', function (e) {
                     if (self.root.Tools.currentTool == 'text') {
@@ -866,20 +875,74 @@ if (!Array.prototype.findIndex) {
                         comment.textLayerGroup.getLayers().forEach(function(layer) {
                           layer.removeFrom(self.root.ownMap);
                         });
-                        var marker = L.marker(coords);
+
+                        var id = self.root.Util.generateGUID();
+
+                        var myIcon = L.divIcon({
+                          className: 'text-comment-div',
+                          html: '<textarea id="' + id + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" rows="6" cols="30" maxlength="130"></textarea>'
+                        });
+
+                        var marker = L.marker(coords, {
+                          icon: myIcon
+                        });
+                        marker.textId = id;
                         marker.addTo(comment.textLayerGroup);
                         marker.addTo(map);
                         self.root.ControlBar.saveDrawing(comment);
                         self.root.ownMap.setView(marker._latlng, map.getZoom(), { animate: false });
+                        self.root.ownMap.panBy([200, 150], { animate: false });
 
+                        // start editing again
+                        // ...
+
+                        self.root.ControlBar.editComment(comment, image);
+                        var textBox = document.getElementById(id);
+                        textBox.focus();
+                        textBox.addEventListener('input', function() {
+                          self.renderText(comment, id, textBox.value);
+                        });
                     }
                 }, false);
 
             },
-            renderText: function (comment, textId, stringVal) {
-            }
-        }
+            renderText: function (comment, textId, val) {
+              //remove old drawing
+              comment.getLayers().forEach(function(layer) {
+                if (layer.layerType == 'textDrawing' && layer.textId == textId) {
+                  comment.removeLayer(layer);
+                  layer.removeFrom(map);
+                }
+              });
 
+              var canvas = document.createElement('canvas');
+              var ctx = canvas.getContext('2d');
+              //hardcoded for now
+              canvas.height = 500;
+              canvas.width = 500;
+              var lineHeight = 37;
+              var colWidth = 23;
+              ctx.font = "40px monospace";
+              var col = 0;
+              var row = 0;
+
+              val.split('').forEach(function(splitChar) {
+                ctx.fillText(splitChar, col * colWidth, (row + 1) * lineHeight); // figure out the relationship between this offset and the font size....
+                col++;
+                if (col == 30) {
+                  col = 0;
+                  row++;
+                }
+              });
+
+              var img = ctx.canvas.toDataURL("data:image/png");
+              // TEMP
+              var newTextImageOverlay = L.imageOverlay(img, map.getBounds()).addTo(map);
+
+
+              console.log(img);
+          }
+      }
     };
 
     MapCommentTool.Network = {
