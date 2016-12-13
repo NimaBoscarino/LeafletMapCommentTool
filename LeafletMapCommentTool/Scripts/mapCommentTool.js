@@ -29,7 +29,6 @@ if (!Array.prototype.findIndex) {
 }
 
 (function (factory, window) {
-
     // define an AMD module that relies on 'leaflet'
     if (typeof define === 'function' && define.amd) {
         define(['leaflet'], factory);
@@ -46,7 +45,6 @@ if (!Array.prototype.findIndex) {
 }(function (L) {
     var MapCommentTool = {
         options: {
-
         },
 
         getMessage: function () {
@@ -66,7 +64,6 @@ if (!Array.prototype.findIndex) {
 
             self.currentMode = 'map';
             var customControl = L.Control.extend({
-
                 options: {
                     position: 'topleft'
                     //control position - allowed: 'topleft', 'topright', 'bottomleft', 'bottomright'
@@ -133,18 +130,17 @@ if (!Array.prototype.findIndex) {
 
             // Remove all comment layer groups from map
             self.Comments.list.forEach(function (_comment) {
-              _comment.removeFrom(self.ownMap);
+                _comment.removeFrom(self.ownMap);
             });
 
             self.Comments.editingComment = comment;
 
             // turn on all drawing tools
             if (options) {
-              self.Tools.on(options);
+                self.Tools.on(options);
             } else {
-              self.Tools.on();
+                self.Tools.on();
             }
-
         },
 
         stopDrawingMode: function () {
@@ -167,13 +163,10 @@ if (!Array.prototype.findIndex) {
 
             self.drawingCanvas.removeFrom(map);
             delete self.drawingCanvas;
-
         }
     };
 
-
     MapCommentTool.ControlBar = {
-
         options: {
             position: 'right',
         },
@@ -270,7 +263,6 @@ if (!Array.prototype.findIndex) {
                     self.drawingView(comment);
                     break;
                 default:
-
             }
 
             return mode;
@@ -393,9 +385,9 @@ if (!Array.prototype.findIndex) {
 
             // trigger drawing mode
             if (options) {
-              self.root.startDrawingMode(comment, options);
+                self.root.startDrawingMode(comment, options);
             } else {
-              self.root.startDrawingMode(comment);
+                self.root.startDrawingMode(comment);
             }
             self.root.Comments.editingComment = comment;
             var canvas = self.root.drawingCanvas._container;
@@ -410,18 +402,17 @@ if (!Array.prototype.findIndex) {
             }
 
             if (image) {
-              var imageObj = new Image();
+                var imageObj = new Image();
 
-              var newWidth = image._image.width * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
-              var newHeight = image._image.height * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
+                var newWidth = image._image.width * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
+                var newHeight = image._image.height * self.root.ownMap.getZoomScale(self.root.ownMap.getZoom(), comment.zoomLevel);
 
-              imageObj.onload = function () {
-                  context.drawImage(imageObj, image._image._leaflet_pos.x, image._image._leaflet_pos.y, newWidth, newHeight);
-              };
+                imageObj.onload = function () {
+                    context.drawImage(imageObj, image._image._leaflet_pos.x, image._image._leaflet_pos.y, newWidth, newHeight);
+                };
 
-              imageObj.src = image._image.src;
+                imageObj.src = image._image.src;
             }
-
 
             var eventDetails = {
                 "detail": {
@@ -437,8 +428,7 @@ if (!Array.prototype.findIndex) {
             return comment;
         },
 
-        saveDrawing: function (comment) {
-
+        saveDrawing: function (comment, options) {
             var self = this;
 
             // prompt for title saving...
@@ -447,144 +437,83 @@ if (!Array.prototype.findIndex) {
             }
             comment.zoomLevel = self.root.ownMap.getZoom();
 
-            // SAVING LOGIC
-            var context = self.root.drawingCanvas._ctx;
-            var canvas = context.canvas;
-
-            var canvasDrawing = canvas.toDataURL("data:image/png");
-
-            var imageBoundsXY = self.root.drawingCanvas._bounds;
-            var imageBoundsMinCoord = self.root.ownMap.layerPointToLatLng(imageBoundsXY.min);
-            var imageBoundsMaxCoord = self.root.ownMap.layerPointToLatLng(imageBoundsXY.max);
-            var imageBounds = [
-              [imageBoundsMinCoord.lat, imageBoundsMinCoord.lng],
-              [imageBoundsMaxCoord.lat, imageBoundsMaxCoord.lng]
-            ];
-            var drawing = L.imageOverlay(canvasDrawing, imageBounds);
-            drawing.layerType = 'drawing';
-            var oldDrawing;
-            if (comment.saveState) {
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == 'drawing') {
-                        comment.removeLayer(layer);
-                        oldDrawing = layer;
-                    }
-                });
-            }
-
-            comment.addLayer(drawing);
-
-            var prepareEvent = function (layers) {
-                // Fire "Save drawing event"
-                // TO BE HEAVILY REFACTORED
-                var event;
-                var eventDetails;
-                if (oldDrawing) {
-                    eventDetails = {
-                        "detail": {
-                            "message": "A drawing has been edited and saved",
-                            "payload": {
-                                "id": comment.id,
-                                "name": comment.name,
-                                "layers": [],
-                                "zoomLevel": comment.zoomLevel,
-                            },
-                        }
-                    };
-
-                    layers.forEach(function (layer) {
-                        var layerAdd = {};
-                        layerAdd.layerType = layer.layerType;
-                        if (layer.layerType == 'drawing') {
-                            layerAdd._bounds = layer._bounds;
-                            layerAdd.src = layer._url;
-                        }
-                        eventDetails.detail.payload.layers.push(layerAdd);
-                    });
-                    event = new CustomEvent("save-drawing", eventDetails);
-                } else {
-                    eventDetails = {
-                        "detail": {
-                            "message": "A new drawing has been saved",
-                            "payload": {
-                                "id": comment.id,
-                                "name": comment.name,
-                                "layers": [],
-                                "zoomLevel": comment.zoomLevel,
-                            },
-                        }
-                    };
-
-                    layers.forEach(function (layer) {
-                        var layerAdd = {};
-                        layerAdd.layerType = layer.layerType;
-                        if (layer.layerType == 'drawing') {
-                            layerAdd._bounds = layer._bounds;
-                            layerAdd.src = layer._url;
-                        }
-                        eventDetails.detail.payload.layers.push(layerAdd);
-                    });
-                    event = new CustomEvent("new-drawing", eventDetails);
-                }
-                return event;
-            };
-
-            if (oldDrawing) {
-                var mergeCanvas = self.root.mergeCanvas;
-                document.body.appendChild(canvas);
-                var mergeContext = mergeCanvas.getContext('2d');
-
-                var newX_left = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._southWest).x;
-                var newX_right = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._northEast).x;
-                var newY_top = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._northEast).y;
-                var newY_bottom = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._southWest).y;
-                var oldX_left = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._southWest).x;
-                var oldX_right = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._northEast).x;
-                var oldY_top = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._northEast).y;
-                var oldY_bottom = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._southWest).y;
-
-                var leftMost = Math.min(newX_left, oldX_left);
-                var rightMost = Math.max(newX_right, oldX_right);
-                var topMost = Math.min(newY_top, oldY_top);
-                var bottomMost = Math.max(newY_bottom, oldY_bottom);
-
-                mergeCanvas.height = bottomMost - topMost;
-                mergeCanvas.width = rightMost - leftMost;
-
-                var oldImageToCanvas = new Image();
-                var newImageToCanvas = new Image();
-                var mergedDrawingLayer;
-                var newSouthWest = self.root.ownMap.layerPointToLatLng([leftMost, bottomMost]);
-                var newNorthEast = self.root.ownMap.layerPointToLatLng([rightMost, topMost]);
-
-                oldImageToCanvas.onload = function () {
-                    mergeContext.drawImage(oldImageToCanvas, oldX_left - leftMost, oldY_top - topMost, oldX_right - oldX_left, oldY_bottom - oldY_top);
-                    newImageToCanvas.src = canvasDrawing;
-                };
-                newImageToCanvas.onload = function () {
-                    // to make the eraser tool work...
-                    mergeContext.globalCompositeOperation = "destination-out";
-                    mergeContext.fillStyle = "white";
-                    mergeContext.fillRect(newX_left - leftMost, newY_top - topMost, newX_right - newX_left, newY_bottom - newY_top);
-
-                    mergeContext.globalCompositeOperation = "source-over";
-                    mergeContext.drawImage(newImageToCanvas, newX_left - leftMost, newY_top - topMost, newX_right - newX_left, newY_bottom - newY_top);
-                    var mergedDrawing = mergeCanvas.toDataURL("data:image/png");
-                    comment.removeLayer(drawing);
-                    mergedDrawingLayer = L.imageOverlay(mergedDrawing, [newSouthWest, newNorthEast]);
-                    comment.addLayer(mergedDrawingLayer);
-                    mergedDrawingLayer.layerType = 'drawing';
-
-                    var event = prepareEvent(comment.getLayers());
-                    // Dispatch/Trigger/Fire the event
-                    document.dispatchEvent(event);
-
-                };
-                oldImageToCanvas.src = oldDrawing._url;
+            if (options && options.textSave) {
+                console.log('saving text, so special case');
             } else {
-                var event = prepareEvent(comment.getLayers());
-                // Dispatch/Trigger/Fire the event
-                document.dispatchEvent(event);
+                // SAVING LOGIC
+                var context = self.root.drawingCanvas._ctx;
+                var canvas = context.canvas;
+
+                var canvasDrawing = canvas.toDataURL("data:image/png");
+
+                var imageBoundsXY = self.root.drawingCanvas._bounds;
+                var imageBoundsMinCoord = self.root.ownMap.layerPointToLatLng(imageBoundsXY.min);
+                var imageBoundsMaxCoord = self.root.ownMap.layerPointToLatLng(imageBoundsXY.max);
+                var imageBounds = [
+                  [imageBoundsMinCoord.lat, imageBoundsMinCoord.lng],
+                  [imageBoundsMaxCoord.lat, imageBoundsMaxCoord.lng]
+                ];
+                var drawing = L.imageOverlay(canvasDrawing, imageBounds);
+                drawing.layerType = 'drawing';
+                var oldDrawing;
+                if (comment.saveState) {
+                    comment.getLayers().forEach(function (layer) {
+                        if (layer.layerType == 'drawing') {
+                            comment.removeLayer(layer);
+                            oldDrawing = layer;
+                        }
+                    });
+                }
+                comment.addLayer(drawing);
+                
+                if (oldDrawing) {
+                    var mergeCanvas = self.root.mergeCanvas;
+                    document.body.appendChild(canvas);
+                    var mergeContext = mergeCanvas.getContext('2d');
+
+                    var newX_left = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._southWest).x;
+                    var newX_right = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._northEast).x;
+                    var newY_top = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._northEast).y;
+                    var newY_bottom = self.root.ownMap.latLngToLayerPoint(self.root.ownMap.getBounds()._southWest).y;
+                    var oldX_left = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._southWest).x;
+                    var oldX_right = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._northEast).x;
+                    var oldY_top = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._northEast).y;
+                    var oldY_bottom = self.root.ownMap.latLngToLayerPoint(oldDrawing._bounds._southWest).y;
+
+                    var leftMost = Math.min(newX_left, oldX_left);
+                    var rightMost = Math.max(newX_right, oldX_right);
+                    var topMost = Math.min(newY_top, oldY_top);
+                    var bottomMost = Math.max(newY_bottom, oldY_bottom);
+
+                    mergeCanvas.height = bottomMost - topMost;
+                    mergeCanvas.width = rightMost - leftMost;
+
+                    var oldImageToCanvas = new Image();
+                    var newImageToCanvas = new Image();
+                    var mergedDrawingLayer;
+                    var newSouthWest = self.root.ownMap.layerPointToLatLng([leftMost, bottomMost]);
+                    var newNorthEast = self.root.ownMap.layerPointToLatLng([rightMost, topMost]);
+
+                    oldImageToCanvas.onload = function () {
+                        mergeContext.drawImage(oldImageToCanvas, oldX_left - leftMost, oldY_top - topMost, oldX_right - oldX_left, oldY_bottom - oldY_top);
+                        newImageToCanvas.src = canvasDrawing;
+                    };
+                    newImageToCanvas.onload = function () {
+                        // to make the eraser tool work...
+                        mergeContext.globalCompositeOperation = "destination-out";
+                        mergeContext.fillStyle = "white";
+                        mergeContext.fillRect(newX_left - leftMost, newY_top - topMost, newX_right - newX_left, newY_bottom - newY_top);
+
+                        mergeContext.globalCompositeOperation = "source-over";
+                        mergeContext.drawImage(newImageToCanvas, newX_left - leftMost, newY_top - topMost, newX_right - newX_left, newY_bottom - newY_top);
+                        var mergedDrawing = mergeCanvas.toDataURL("data:image/png");
+                        comment.removeLayer(drawing);
+                        mergedDrawingLayer = L.imageOverlay(mergedDrawing, [newSouthWest, newNorthEast]);
+                        comment.addLayer(mergedDrawingLayer);
+                        mergedDrawingLayer.layerType = 'drawing';
+                    };
+                    oldImageToCanvas.src = oldDrawing._url;
+                } 
             }
 
             self.root.stopDrawingMode();
@@ -606,12 +535,9 @@ if (!Array.prototype.findIndex) {
             self.root.stopDrawingMode();
             return true;
         }
-
     };
 
-
     MapCommentTool.Comments = {
-
         list: [],
         editingComment: '',
 
@@ -630,7 +556,6 @@ if (!Array.prototype.findIndex) {
             self.list.push(comment);
             return comment;
         }
-
     };
 
     MapCommentTool.Util = {
@@ -655,37 +580,35 @@ if (!Array.prototype.findIndex) {
         },
 
         cropImageFromCanvas: function (ctx, canvas) {
-          var w = canvas.width,
-          h = canvas.height,
-          pix = {x:[], y:[]},
-          imageData = ctx.getImageData(0,0,canvas.width,canvas.height),
-          x, y, index;
+            var w = canvas.width,
+            h = canvas.height,
+            pix = { x: [], y: [] },
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height),
+            x, y, index;
 
-          for (y = 0; y < h; y++) {
-              for (x = 0; x < w; x++) {
-                  index = (y * w + x) * 4;
-                  if (imageData.data[index+3] > 0) {
+            for (y = 0; y < h; y++) {
+                for (x = 0; x < w; x++) {
+                    index = (y * w + x) * 4;
+                    if (imageData.data[index + 3] > 0) {
+                        pix.x.push(x);
+                        pix.y.push(y);
+                    }
+                }
+            }
+            pix.x.sort(function (a, b) { return a - b });
+            pix.y.sort(function (a, b) { return a - b });
+            var n = pix.x.length - 1;
 
-                      pix.x.push(x);
-                      pix.y.push(y);
+            w = pix.x[n] - pix.x[0];
+            h = pix.y[n] - pix.y[0];
+            var cut = ctx.getImageData(pix.x[0], pix.y[0], w, h);
 
-                  }
-              }
-          }
-          pix.x.sort(function(a,b){return a-b});
-          pix.y.sort(function(a,b){return a-b});
-          var n = pix.x.length-1;
+            canvas.width = w;
+            canvas.height = h;
+            ctx.putImageData(cut, 0, 0);
 
-          w = pix.x[n] - pix.x[0];
-          h = pix.y[n] - pix.y[0];
-          var cut = ctx.getImageData(pix.x[0], pix.y[0], w, h);
-
-          canvas.width = w;
-          canvas.height = h;
-          ctx.putImageData(cut, 0, 0);
-
-          var image = canvas.toDataURL();
-          return image;
+            var image = canvas.toDataURL();
+            return image;
         }
     };
 
@@ -701,33 +624,33 @@ if (!Array.prototype.findIndex) {
             self.text.root = self.root;
 
             if (!options) {
-              self.pen.setListeners();
-              self.eraser.setListeners();
-              self.text.setListeners();
+                self.pen.setListeners();
+                self.eraser.setListeners();
+                self.text.setListeners();
 
-              // add all text images
-              self.root.Comments.editingComment.getLayers().forEach(function(layer) {
-                if (layer.layerType == 'textDrawing') {
-                  layer.addTo(self.root.ownMap);
-                  layer._image.addEventListener('onmouseover', function() {
-                    console.log('mouse me')
-                  });
-                }
-              });
-
-
+                // add all text images
+                self.root.Comments.editingComment.getLayers().forEach(function (layer) {
+                    if (layer.layerType == 'textDrawing') {
+                        layer.addTo(self.root.ownMap);
+                        layer._image.addEventListener('onmouseover', function () {
+                            console.log('mouse me')
+                        });
+                    }
+                });
             } else {
+                var canvas = self.root.drawingCanvas._container;
+                var clickCanvasEndText = function (e) {
+                    console.log('exiting text mode');
+                    options.textAreaMarker.removeFrom(self.root.ownMap);
+                    canvas.removeEventListener('click', clickCanvasEndText, false);
+                    self.root.Tools.on();
+                    self.root.Comments.editingComment.addTo(self.root.ownMap);
+                    // save everything (with options)
 
-              var canvas = self.root.drawingCanvas._container;
-              var clickCanvasEndText = function(e) {
-                console.log('exiting text mode');
-                options.textAreaMarker.removeFrom(self.root.ownMap);
-                canvas.removeEventListener('click', clickCanvasEndText, false);
-                self.root.Tools.on();
-                self.root.Comments.editingComment.addTo(self.root.ownMap);
-              }
-              canvas.addEventListener('click', clickCanvasEndText, false);
+                    self.root.ControlBar.saveDrawing(self.root.Comments.editingComment, {textSave: true});
 
+                }
+                canvas.addEventListener('click', clickCanvasEndText, false);
             }
 
             self.setCurrentTool(self.defaultTool, {
@@ -739,7 +662,6 @@ if (!Array.prototype.findIndex) {
             var self = this;
             self[self.currentTool].terminate();
             self.currentTool = '';
-
         },
 
         setCurrentTool: function (tool, options) {
@@ -771,7 +693,6 @@ if (!Array.prototype.findIndex) {
                 self.colour = options.colour;
                 self.root.drawingCanvas._container.classList.add("drawing-canvas-" + self.colour + "-pen");
                 self.root.ownMap.getPane('markerPane').style['z-index'] = 300;
-
             },
             terminate: function () {
                 var self = this;
@@ -941,197 +862,194 @@ if (!Array.prototype.findIndex) {
                     }
                 });
 
-                var inputRenderText = function(e) {
-                  self.renderText(comment, id, textBox.value, marker);
+                var inputRenderText = function (e) {
+                    self.renderText(comment, id, textBox.value, marker);
                 }
 
-                var clickAddText = function(e) {
-                  if (self.root.Tools.currentTool == 'text') {
-                    canvas = self.root.drawingCanvas._container;
+                var clickAddText = function (e) {
+                    if (self.root.Tools.currentTool == 'text') {
+                        canvas = self.root.drawingCanvas._container;
 
-                    var coords = self.root.ownMap.containerPointToLatLng([e.layerX, e.layerY]);
+                        var coords = self.root.ownMap.containerPointToLatLng([e.layerX, e.layerY]);
 
-                    // needs to be added to a layer group for text... not to map
-                    comment.textLayerGroup.getLayers().forEach(function(layer) {
-                      layer.removeFrom(self.root.ownMap);
-                    });
+                        // needs to be added to a layer group for text... not to map
+                        comment.textLayerGroup.getLayers().forEach(function (layer) {
+                            layer.removeFrom(self.root.ownMap);
+                        });
 
-                    id = self.root.Util.generateGUID();
+                        id = self.root.Util.generateGUID();
 
-                    var myIcon = L.divIcon({
-                      className: 'text-comment-div',
-                      html: '<textarea id="' + id + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" rows="6" cols="30" maxlength="130"></textarea>'
-                    });
+                        var myIcon = L.divIcon({
+                            className: 'text-comment-div',
+                            html: '<textarea id="' + id + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" rows="6" cols="30" maxlength="130"></textarea>'
+                        });
 
-                    marker = L.marker(coords, {
-                      icon: myIcon
-                    });
-                    marker.textId = id;
-                    marker.addTo(comment.textLayerGroup);
-                    marker.addTo(self.root.ownMap);
-                    marker.layerType = 'textAreaMarker';
-                    self.root.ControlBar.saveDrawing(comment);
-                    self.root.ownMap.setView(marker._latlng, map.getZoom(), { animate: false });
-                    self.root.ownMap.panBy([200, 150], { animate: false });
+                        marker = L.marker(coords, {
+                            icon: myIcon
+                        });
+                        marker.textId = id;
+                        marker.addTo(comment.textLayerGroup);
+                        marker.addTo(self.root.ownMap);
+                        marker.layerType = 'textAreaMarker';
+                        self.root.ControlBar.saveDrawing(comment);
+                        self.root.ownMap.setView(marker._latlng, map.getZoom(), { animate: false });
+                        self.root.ownMap.panBy([200, 150], { animate: false });
 
-                    // start editing again
-                    // ...
+                        // start editing again
+                        // ...
 
-                    self.root.ControlBar.editComment(comment, image, {addText: true, textAreaMarker: marker});
-                    self.root.Tools.setCurrentTool('text', {listeners: false});
-                    textBox = document.getElementById(id);
-                    textBox.focus();
-                    textBox.addEventListener('input', inputRenderText, false);
-                  }
+                        self.root.ControlBar.editComment(comment, image, { addText: true, textAreaMarker: marker });
+                        self.root.Tools.setCurrentTool('text', { listeners: false });
+                        textBox = document.getElementById(id);
+                        textBox.focus();
+                        textBox.addEventListener('input', inputRenderText, false);
+                    }
                 }
 
                 canvas.addEventListener('click', clickAddText, false);
-
             },
             renderText: function (comment, textId, val, marker) {
-              var self = this;
-              var textBox = document.getElementById(textId);
-              var boundingRect = textBox.getBoundingClientRect();
-              var textDrawingImage;
-              //remove old drawing
-              comment.getLayers().forEach(function(layer) {
-                if (layer.layerType == 'textDrawing' && layer.textId == textId) {
-                  comment.removeLayer(layer);
-                  layer.removeFrom(self.root.ownMap);
-                  textDrawingImage = layer;
-                }
-              });
-
-              var canvas = document.createElement('canvas');
-              var ctx = canvas.getContext('2d');
-              //hardcoded for now
-              canvas.height = 1000;
-              canvas.width = 1000;
-              var lineHeight = 25;
-              var colWidth = 18;
-              ctx.font = "30px monospace";
-              var col = 0;
-              var row = 0;
-
-              // parsing every character, this is going to turn into a beast
-              val.split('').forEach(function(splitChar) {
-                ctx.fillText(splitChar, col * colWidth, (row + 1) * lineHeight); // figure out the relationship between this offset and the font size....
-                col++;
-                if ((col == 30) || splitChar == '\n'){
-                  col = 0;
-                  row++;
-                }
-              });
-
-              var img = new Image();
-
-              img.onload = function(){
-                self.placeText({
-                  marker: marker,
-                  img: img,
-                  textId: textId,
-                  val: val,
-                  textDrawingImage: textDrawingImage,
-                  comment: comment,
-                });
-              };
-
-              img.src = self.root.Util.cropImageFromCanvas(ctx, canvas);
-
-          },
-
-          placeText: function(args) {
-            var self = this; // I should get this tattooed on my forehead.
-
-            var marker = args.marker;
-            var img = args.img;
-            var textId = args.textId;
-            var val = args.val;
-            var textDrawingImage = args.textDrawingImage;
-            var comment = args.comment;
-
-            var markerToPoint = self.root.ownMap.latLngToLayerPoint(marker._latlng);
-            var southWest = self.root.ownMap.layerPointToLatLng([markerToPoint.x + img.width, markerToPoint.y + img.height]);
-            var northEast = marker._latlng;
-            var newTextImageOverlay = L.imageOverlay(img.src, [southWest, northEast], {interactive: true, pane: 'markerPane'});
-            newTextImageOverlay.layerType = 'textDrawing';
-            newTextImageOverlay.textId = textId;
-
-            marker.textVal = val;
-            marker.textZoomLevel = map.getZoom();
-
-            // eraser listeners
-            newTextImageOverlay.on('mouseover', function() {
-              if (self.root.Tools.currentTool == 'eraser') {
-                L.DomUtil.addClass(newTextImageOverlay._image, 'text-hover-erase');
-              }
-            });
-            newTextImageOverlay.on('mouseout', function() {
-              if (self.root.Tools.currentTool == 'eraser') {
-                L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-erase');
-              }
-            });
-            newTextImageOverlay.on('click', function() {
-              if (self.root.Tools.currentTool == 'eraser') {
-                comment.removeLayer(newTextImageOverlay);
-                comment.removeLayer(textDrawingImage);
-                textDrawingImage.removeFrom(self.root.ownMap);
-                newTextImageOverlay.removeFrom(self.root.ownMap);
-              }
-            });
-
-            // text tool listeners (for editing)
-            newTextImageOverlay.on('mouseover', function() {
-              if (self.root.Tools.currentTool == 'text') {
-                L.DomUtil.addClass(newTextImageOverlay._image, 'text-hover-edit');
-              }
-            });
-            newTextImageOverlay.on('mouseout', function() {
-              if (self.root.Tools.currentTool == 'text') {
-                L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-edit');
-              }
-            });
-            newTextImageOverlay.on('click', function() {
-              if (self.root.Tools.currentTool == 'text') {
-                L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-edit');
-
-                self.root.ControlBar.saveDrawing(comment);
-                self.root.ownMap.setView(marker._latlng, marker.textZoomLevel, { animate: false });
-                self.root.ownMap.panBy([200, 150], { animate: false });
-
-                newTextImageOverlay.removeFrom(self.root.ownMap);
-
-                comment.textLayerGroup.getLayers().forEach(function(layer) {
-                  if (layer.layerType == 'textAreaMarker' && layer.textId == textId) {
-                    layer.addTo(self.root.ownMap);
-                    var inputBox = document.getElementById(textId);
-                    inputBox.value = layer.textVal;
-                    inputBox.focus();
-
-                    var inputRenderText = function(e) {
-                      self.renderText(comment, textId, inputBox.value, layer);
+                var self = this;
+                var textBox = document.getElementById(textId);
+                var boundingRect = textBox.getBoundingClientRect();
+                var textDrawingImage;
+                //remove old drawing
+                comment.getLayers().forEach(function (layer) {
+                    if (layer.layerType == 'textDrawing' && layer.textId == textId) {
+                        comment.removeLayer(layer);
+                        layer.removeFrom(self.root.ownMap);
+                        textDrawingImage = layer;
                     }
-
-                    var image;
-                    comment.getLayers().forEach(function (layer) {
-                        if (layer.layerType == 'drawing') {
-                            image = layer;
-                        }
-                    });
-
-                    self.root.ControlBar.editComment(comment, image, {addText: true, textAreaMarker: marker});
-                    self.root.Tools.setCurrentTool('text', {listeners: false});
-
-                    inputBox.addEventListener('input', inputRenderText, false);
-
-                  }
                 });
-              }
-            });
 
-            comment.addLayer(newTextImageOverlay);
-          }
-      }
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+                //hardcoded for now
+                canvas.height = 1000;
+                canvas.width = 1000;
+                var lineHeight = 25;
+                var colWidth = 18;
+                ctx.font = "30px monospace";
+                var col = 0;
+                var row = 0;
+
+                // parsing every character, this is going to turn into a beast
+                val.split('').forEach(function (splitChar) {
+                    ctx.fillText(splitChar, col * colWidth, (row + 1) * lineHeight); // figure out the relationship between this offset and the font size....
+                    col++;
+                    if ((col == 30) || splitChar == '\n') {
+                        col = 0;
+                        row++;
+                    }
+                });
+
+                var img = new Image();
+
+                img.onload = function () {
+                    self.placeText({
+                        marker: marker,
+                        img: img,
+                        textId: textId,
+                        val: val,
+                        textDrawingImage: textDrawingImage,
+                        comment: comment,
+                    });
+                };
+
+                img.src = self.root.Util.cropImageFromCanvas(ctx, canvas);
+            },
+
+            placeText: function (args) {
+                var self = this; // I should get this tattooed on my forehead.
+
+                var marker = args.marker;
+                var img = args.img;
+                var textId = args.textId;
+                var val = args.val;
+                var textDrawingImage = args.textDrawingImage;
+                var comment = args.comment;
+
+                var markerToPoint = self.root.ownMap.latLngToLayerPoint(marker._latlng);
+                var southWest = self.root.ownMap.layerPointToLatLng([markerToPoint.x + img.width, markerToPoint.y + img.height]);
+                var northEast = marker._latlng;
+                var newTextImageOverlay = L.imageOverlay(img.src, [southWest, northEast], { interactive: true, pane: 'markerPane' });
+                newTextImageOverlay.layerType = 'textDrawing';
+                newTextImageOverlay.textId = textId;
+
+                marker.textVal = val;
+                marker.textZoomLevel = map.getZoom();
+
+                // eraser listeners
+                newTextImageOverlay.on('mouseover', function () {
+                    if (self.root.Tools.currentTool == 'eraser') {
+                        L.DomUtil.addClass(newTextImageOverlay._image, 'text-hover-erase');
+                    }
+                });
+                newTextImageOverlay.on('mouseout', function () {
+                    if (self.root.Tools.currentTool == 'eraser') {
+                        L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-erase');
+                    }
+                });
+                newTextImageOverlay.on('click', function () {
+                    if (self.root.Tools.currentTool == 'eraser') {
+                        comment.removeLayer(newTextImageOverlay);
+                        comment.removeLayer(textDrawingImage);
+                        textDrawingImage.removeFrom(self.root.ownMap);
+                        newTextImageOverlay.removeFrom(self.root.ownMap);
+                    }
+                });
+
+                // text tool listeners (for editing)
+                newTextImageOverlay.on('mouseover', function () {
+                    if (self.root.Tools.currentTool == 'text') {
+                        L.DomUtil.addClass(newTextImageOverlay._image, 'text-hover-edit');
+                    }
+                });
+                newTextImageOverlay.on('mouseout', function () {
+                    if (self.root.Tools.currentTool == 'text') {
+                        L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-edit');
+                    }
+                });
+                newTextImageOverlay.on('click', function () {
+                    if (self.root.Tools.currentTool == 'text') {
+                        L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-edit');
+
+                        self.root.ControlBar.saveDrawing(comment);
+                        self.root.ownMap.setView(marker._latlng, marker.textZoomLevel, { animate: false });
+                        self.root.ownMap.panBy([200, 150], { animate: false });
+
+                        newTextImageOverlay.removeFrom(self.root.ownMap);
+
+                        comment.textLayerGroup.getLayers().forEach(function (layer) {
+                            if (layer.layerType == 'textAreaMarker' && layer.textId == textId) {
+                                layer.addTo(self.root.ownMap);
+                                var inputBox = document.getElementById(textId);
+                                inputBox.value = layer.textVal;
+                                inputBox.focus();
+
+                                var inputRenderText = function (e) {
+                                    self.renderText(comment, textId, inputBox.value, layer);
+                                }
+
+                                var image;
+                                comment.getLayers().forEach(function (layer) {
+                                    if (layer.layerType == 'drawing') {
+                                        image = layer;
+                                    }
+                                });
+
+                                self.root.ControlBar.editComment(comment, image, { addText: true, textAreaMarker: marker });
+                                self.root.Tools.setCurrentTool('text', { listeners: false });
+
+                                inputBox.addEventListener('input', inputRenderText, false);
+                            }
+                        });
+                    }
+                });
+
+                comment.addLayer(newTextImageOverlay);
+            }
+        }
     };
 
     MapCommentTool.Network = {
