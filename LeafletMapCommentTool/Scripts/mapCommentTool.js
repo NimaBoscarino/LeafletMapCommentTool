@@ -881,9 +881,11 @@ if (!Array.prototype.findIndex) {
             state: 'addMarker',
             initialize: function () {
                 var self = this;
+                self.root.ownMap.getPane('markerPane').style['z-index'] = 600;
             },
             terminate: function () {
                 var self = this;
+                self.root.ownMap.getPane('markerPane').style['z-index'] = 300;
             },
             handleText: function (e) {
                 var self = this;
@@ -934,6 +936,7 @@ if (!Array.prototype.findIndex) {
                     marker.textId = id;
                     marker.addTo(comment.textLayerGroup);
                     marker.addTo(self.root.ownMap);
+                    marker.layerType = 'textAreaMarker';
                     self.root.ControlBar.saveDrawing(comment);
                     self.root.ownMap.setView(marker._latlng, map.getZoom(), { animate: false });
                     self.root.ownMap.panBy([200, 150], { animate: false });
@@ -995,6 +998,9 @@ if (!Array.prototype.findIndex) {
               newTextImageOverlay.layerType = 'textDrawing';
               newTextImageOverlay.textId = textId;
 
+              marker.textVal = val;
+              marker.textZoomLevel = map.getZoom();
+
               // eraser listeners
               newTextImageOverlay.on('mouseover', function() {
                 if (self.root.Tools.currentTool == 'eraser') {
@@ -1008,7 +1014,6 @@ if (!Array.prototype.findIndex) {
               });
               newTextImageOverlay.on('click', function() {
                 if (self.root.Tools.currentTool == 'eraser') {
-                  console.log('delete text annotation!!!~!!');
                   comment.removeLayer(newTextImageOverlay);
                   comment.removeLayer(textDrawingImage);
                   textDrawingImage.removeFrom(self.root.ownMap);
@@ -1017,6 +1022,53 @@ if (!Array.prototype.findIndex) {
               });
 
               // text tool listeners (for editing)
+              newTextImageOverlay.on('mouseover', function() {
+                if (self.root.Tools.currentTool == 'text') {
+                  L.DomUtil.addClass(newTextImageOverlay._image, 'text-hover-edit');
+                }
+              });
+              newTextImageOverlay.on('mouseout', function() {
+                if (self.root.Tools.currentTool == 'text') {
+                  L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-edit');
+                }
+              });
+              newTextImageOverlay.on('click', function() {
+                if (self.root.Tools.currentTool == 'text') {
+                  L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-edit');
+
+                  self.root.ControlBar.saveDrawing(comment);
+                  self.root.ownMap.setView(marker._latlng, marker.textZoomLevel, { animate: false });
+                  self.root.ownMap.panBy([200, 150], { animate: false });
+
+                  newTextImageOverlay.removeFrom(self.root.ownMap);
+
+                  comment.textLayerGroup.getLayers().forEach(function(layer) {
+                    if (layer.layerType == 'textAreaMarker' && layer.textId == textId) {
+                      layer.addTo(self.root.ownMap);
+                      var inputBox = document.getElementById(textId);
+                      inputBox.value = layer.textVal;
+                      inputBox.focus();
+
+                      var inputRenderText = function(e) {
+                        self.renderText(comment, textId, inputBox.value, layer);
+                      }
+
+                      var image;
+                      comment.getLayers().forEach(function (layer) {
+                          if (layer.layerType == 'drawing') {
+                              image = layer;
+                          }
+                      });
+
+                      self.root.ControlBar.editComment(comment, image, {addText: true, textAreaMarker: marker});
+                      self.root.Tools.setCurrentTool('text', {listeners: false});
+
+                      inputBox.addEventListener('input', inputRenderText, false);
+
+                    }
+                  });
+                }
+              });
 
 
               comment.addLayer(newTextImageOverlay);

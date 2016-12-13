@@ -184,6 +184,10 @@
     cursor:url(../assets/eraser.png) 15 30, auto;
     border: dashed 3px red;
 }
+.text-hover-edit {
+    cursor:url(../assets/text.png) 15 30, auto;
+    border: dashed 3px blue;
+}
 
 .user-editing-disabled {
     background-color: #f65555;
