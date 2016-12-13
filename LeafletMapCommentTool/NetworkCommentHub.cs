@@ -10,11 +10,22 @@ namespace LeafletMapCommentTool
     [HubName("networkComment")]
     public class NetworkCommentHub : Hub
     {
-        private static String message = "Hey there";
+        private static String message = "Ping!!";
 
         public void getMessage()
         {
-            this.Clients.All.onGetMessage(message);
+            this.Clients.Caller.onGetMessage(message);
         }
+
+        public void newComment()
+        {
+            this.Clients.Others.onNewComment();
+        }
+
+        public void saveComment()
+        {
+            this.Clients.Others.onSaveComment();
+        }
+
     }
 }
