@@ -180,7 +180,7 @@
 
 }
 
-.eraser-mode-text {
+.text-hover-erase {
     cursor:url(../assets/eraser.png) 15 30, auto;
     border: dashed 3px red;
 }

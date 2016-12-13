@@ -121,7 +121,7 @@ if (!Array.prototype.findIndex) {
             self.drawingCanvas = L.canvas({
                 padding: 0
             });
-            self.drawingCanvas.addTo(map);
+            self.drawingCanvas.addTo(self.ownMap);
 
             // set canvas class
             self.drawingCanvas._container.className += " drawing-canvas";
@@ -133,7 +133,7 @@ if (!Array.prototype.findIndex) {
 
             // Remove all comment layer groups from map
             self.Comments.list.forEach(function (_comment) {
-                _comment.removeFrom(map);
+              _comment.removeFrom(self.ownMap);
             });
 
             self.Comments.editingComment = comment;
@@ -670,6 +670,19 @@ if (!Array.prototype.findIndex) {
               self.pen.setListeners();
               self.eraser.setListeners();
               self.text.setListeners();
+
+              // add all text images
+              self.root.Comments.editingComment.getLayers().forEach(function(layer) {
+                if (layer.layerType == 'textDrawing') {
+                  layer.addTo(self.root.ownMap);
+                  console.log(layer._image);
+                  layer._image.addEventListener('onmouseover', function() {
+                    console.log('mouse me')
+                  });
+                }
+              });
+
+
             } else {
 
               var canvas = self.root.drawingCanvas._container;
@@ -724,6 +737,8 @@ if (!Array.prototype.findIndex) {
                 var self = this;
                 self.colour = options.colour;
                 self.root.drawingCanvas._container.classList.add("drawing-canvas-" + self.colour + "-pen");
+                self.root.ownMap.getPane('markerPane').style['z-index'] = 300;
+
             },
             terminate: function () {
                 var self = this;
@@ -934,7 +949,6 @@ if (!Array.prototype.findIndex) {
                   }
                 }
 
-
                 canvas.addEventListener('click', clickAddText, false);
 
             },
@@ -942,14 +956,13 @@ if (!Array.prototype.findIndex) {
               var self = this;
               var textBox = document.getElementById(textId);
               var boundingRect = textBox.getBoundingClientRect();
-
-              console.log(marker);
-
+              var textDrawingImage;
               //remove old drawing
               comment.getLayers().forEach(function(layer) {
                 if (layer.layerType == 'textDrawing' && layer.textId == textId) {
                   comment.removeLayer(layer);
                   layer.removeFrom(self.root.ownMap);
+                  textDrawingImage = layer;
                 }
               });
 
@@ -978,9 +991,34 @@ if (!Array.prototype.findIndex) {
               var markerToPoint = self.root.ownMap.latLngToLayerPoint(marker._latlng);
               var southWest = self.root.ownMap.layerPointToLatLng([markerToPoint.x + 1000, markerToPoint.y + 1000]);
               var northEast = marker._latlng;
-              var newTextImageOverlay = L.imageOverlay(img, [southWest, northEast]);
+              var newTextImageOverlay = L.imageOverlay(img, [southWest, northEast], {interactive: true, pane: 'markerPane'});
               newTextImageOverlay.layerType = 'textDrawing';
               newTextImageOverlay.textId = textId;
+
+              // eraser listeners
+              newTextImageOverlay.on('mouseover', function() {
+                if (self.root.Tools.currentTool == 'eraser') {
+                  L.DomUtil.addClass(newTextImageOverlay._image, 'text-hover-erase');
+                }
+              });
+              newTextImageOverlay.on('mouseout', function() {
+                if (self.root.Tools.currentTool == 'eraser') {
+                  L.DomUtil.removeClass(newTextImageOverlay._image, 'text-hover-erase');
+                }
+              });
+              newTextImageOverlay.on('click', function() {
+                if (self.root.Tools.currentTool == 'eraser') {
+                  console.log('delete text annotation!!!~!!');
+                  comment.removeLayer(newTextImageOverlay);
+                  comment.removeLayer(textDrawingImage);
+                  textDrawingImage.removeFrom(self.root.ownMap);
+                  newTextImageOverlay.removeFrom(self.root.ownMap);
+                }
+              });
+
+              // text tool listeners (for editing)
+
+
               comment.addLayer(newTextImageOverlay);
           }
       }
