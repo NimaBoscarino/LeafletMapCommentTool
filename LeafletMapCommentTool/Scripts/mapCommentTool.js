@@ -528,6 +528,15 @@ if (!Array.prototype.findIndex) {
 
             document.dispatchEvent(event);
 
+            if (options && options.textSave) {
+                var image;
+                comment.getLayers().forEach(function (layer) {
+                    if (layer.layerType == 'drawing') {
+                        image = layer;
+                    }
+                });
+                self.editComment(comment, image);
+            }
             return comment;
         },
 
