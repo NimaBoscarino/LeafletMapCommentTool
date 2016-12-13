@@ -18,17 +18,7 @@
 
     <script>
         L.MapCommentTool.addTo(map);
-        /*
-        $(function () {
-            var con = $.hubConnection();
-            var hub = con.createHubProxy('networkComment');
-            hub.on('onGetMessage', function (i) {
-                console.log(i);
-            });
-            con.start(function () {
-                hub.invoke('getMessage');
-            });
-        }); */
+        map.MapCommentTool.Network.init();
     </script>
 </body>
 </html>

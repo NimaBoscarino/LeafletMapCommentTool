@@ -518,7 +518,15 @@ if (!Array.prototype.findIndex) {
 
             self.root.stopDrawingMode();
 
+            var isNew = !comment.saveState;
             comment.saveState = true;
+
+            // This event needs to be placed somewhere where it can be called at the end of execution
+            // Or else it will get sent before images get merged... Need to do stuff with callbacks
+            
+            var event = isNew ? new Event ('newComment') : new Event('saveComment');
+
+            document.dispatchEvent(event);
 
             return comment;
         },
@@ -1058,6 +1066,43 @@ if (!Array.prototype.findIndex) {
 
         init: function () {
             var self = this;
+            console.log('init network stuff');
+            var con = $.hubConnection();
+            var hub = con.createHubProxy('networkComment');
+
+            hub.on('onGetMessage', function (i) {
+                console.log(i);
+            });
+
+            // this client has created a new comment
+            document.addEventListener('newComment', function (e) {
+                console.log('alert hub for newComment');
+                hub.invoke('newComment');
+            }, false);
+
+            // this client has executed "SAVE" on a comment that is not new
+            document.addEventListener('saveComment', function (e) {
+                console.log('alert hub for saveComment');
+                hub.invoke('saveComment');
+            }, false);
+
+            hub.on('onNewComment', function () {
+                console.log('new comment added by another client');
+            });
+
+            hub.on('onSaveComment', function () {
+                console.log('a comment has been edited by another client');
+            });
+
+            hub.on('onUpdateEditList', function () {
+                console.log('update edit list');
+            });
+
+            con.start(function () {
+                hub.invoke('getMessage');
+            });
+
+            /*
             socket.on('load comments', function (msg) {
                 self.lockedComments = msg.editList;
 
@@ -1150,6 +1195,7 @@ if (!Array.prototype.findIndex) {
             document.addEventListener("edit-cancel", function (e) {
                 socket.emit('cancel edit', e.detail);
             });
+            */
         },
     };
 
