@@ -69,6 +69,38 @@ namespace LeafletMapCommentTool
 
             this.Clients.Others.onSaveComment();
         }
+
+        public void editCommentStart(Comment comment)
+        {
+            var client = new MongoClient();
+            var database = client.GetDatabase("MapCommentToolSignalR");
+            var collection = database.GetCollection<BsonDocument>("beingEdited");
+
+            // insert into beignEdited
+            var editComment = new BsonDocument {
+                { "id", comment.Id },
+            };
+
+            collection.InsertOne(editComment);
+
+            // update the edit list for all
+        }
+
+        public void editCommentEnd(Comment comment)
+        {
+            System.Diagnostics.Debug.WriteLine("remove a comment from beingEdited");
+
+            var client = new MongoClient();
+            var database = client.GetDatabase("MapCommentToolSignalR");
+            var collection = database.GetCollection<BsonDocument>("beingEdited");
+            var filter = Builders<BsonDocument>.Filter.Eq("id", comment.Id);
+
+            collection.DeleteOne(filter);
+
+            // update the edit list for all
+        }
+
+    
     }
 
     public class Comment

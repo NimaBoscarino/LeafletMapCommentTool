@@ -416,13 +416,12 @@ if (!Array.prototype.findIndex) {
 
             var eventDetails = {
                 "detail": {
-                    "message": "A drawing is being edited",
-                    "payload": {
+                    "comment": {
                         "id": comment.id,
                     },
                 }
             };
-            event = new CustomEvent("edit-start", eventDetails);
+            event = new CustomEvent("editCommentStart", eventDetails);
             document.dispatchEvent(event);
 
             return comment;
@@ -515,36 +514,50 @@ if (!Array.prototype.findIndex) {
 
                         if (options && options.closeSave) {
                             console.log('saved and closed, alert server');
+                            console.log('is old!!!!');
+                            // alert the server to update the editList
+                            var editListComment = {
+                                id: comment.id,
+                            };
+
+                            var event = new CustomEvent('editCommentEnd', {
+                                'detail': {
+                                    comment: editListComment
+                                }
+                            });
+                            document.dispatchEvent(event);
+
+                            // alert the server with the updated comment
                         }
                     };
                     oldImageToCanvas.src = oldDrawing._url;
                 } else {
                     // serialize comment
-                    var sendComment = {
-                        id: comment.id,
-                        name: comment.name,
-                        drawing: {
-                            dataUrl: canvasDrawing,
-                            bounds: {
-                                northEast: {
-                                    lat: imageBoundsMaxCoord.lat,
-                                    lng: imageBoundsMaxCoord.lng
-                                },
-                                southWest: {
-                                    lat: imageBoundsMinCoord.lat,
-                                    lng: imageBoundsMinCoord.lng
+                    // and alert the server with the new comment
+                    if (isNew) {
+                        var sendComment = {
+                            id: comment.id,
+                            name: comment.name,
+                            drawing: {
+                                dataUrl: canvasDrawing,
+                                bounds: {
+                                    northEast: {
+                                        lat: imageBoundsMaxCoord.lat,
+                                        lng: imageBoundsMaxCoord.lng
+                                    },
+                                    southWest: {
+                                        lat: imageBoundsMinCoord.lat,
+                                        lng: imageBoundsMinCoord.lng
+                                    }
                                 }
                             }
-                        }
-                    };
+                        };
 
-                    if (isNew) {
                         var event = new CustomEvent('newComment', {
                             'detail': {
                                 comment: sendComment
                             }
                         });
-
                         document.dispatchEvent(event);
                     }
                 }
@@ -1119,6 +1132,18 @@ if (!Array.prototype.findIndex) {
             document.addEventListener('saveComment', function (e) {
                 console.log('alert hub for saveComment');
                 hub.invoke('saveComment');
+            }, false);
+
+            // this client has begun editing a comment
+            document.addEventListener('editCommentStart', function (e) {
+                console.log('alert hub for editCommentStart');
+                hub.invoke('editCommentStart', e.detail.comment);
+            }, false);
+
+            // this client has ended editing a comment
+            document.addEventListener('editCommentEnd', function (e) {
+                console.log('alert hub for editCommentEnd', e.detail.comment);
+                hub.invoke('editCommentEnd', e.detail.comment);
             }, false);
 
             // a new comment has been created by another client
