@@ -21,7 +21,7 @@ namespace LeafletMapCommentTool
 
             var filter = Builders<BsonDocument>.Filter.Eq("type", "greeting");
             var greeting = collection.Find(filter).First();
-            filter = Builders<BsonDocument>.Filter.Eq("type", "alert");
+            filter = Builders<BsonDocument>.Filter.Eq("type", "alert_connect");
             var alert = collection.Find(filter).First();
 
             this.Clients.Caller.onGetMessage(greeting["message"]);

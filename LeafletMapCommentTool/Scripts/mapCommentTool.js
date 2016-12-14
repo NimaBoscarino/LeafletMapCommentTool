@@ -524,7 +524,21 @@ if (!Array.prototype.findIndex) {
             // This event needs to be placed somewhere where it can be called at the end of execution
             // Or else it will get sent before images get merged... Need to do stuff with callbacks
             
-            var event = isNew ? new Event ('newComment') : new Event('saveComment');
+            // serialize comment
+            var sendComment = {
+                id: comment.id,
+                name: comment.name,
+                drawing: {
+                    // bunch of stuff
+                },
+                textAnnotations: [],
+            };
+
+            var event = isNew ? new CustomEvent('newComment', {
+                'detail': {
+                    comment: sendComment
+                }
+            }) : new Event('saveComment');
 
             document.dispatchEvent(event);
 
@@ -1086,6 +1100,7 @@ if (!Array.prototype.findIndex) {
             // this client has created a new comment
             document.addEventListener('newComment', function (e) {
                 console.log('alert hub for newComment');
+                console.log(e.detail.comment);
                 hub.invoke('newComment');
             }, false);
 
