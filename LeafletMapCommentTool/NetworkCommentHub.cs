@@ -7,6 +7,7 @@ using Microsoft.AspNet.SignalR.Hubs;
 using MongoDB.Driver;
 using MongoDB.Bson;
 using Newtonsoft.Json;
+using System.Collections;
 
 namespace LeafletMapCommentTool
 {
@@ -55,7 +56,7 @@ namespace LeafletMapCommentTool
         }
 
     }
-
+    
     public class Comment
     {
         [JsonProperty("id")]
@@ -63,5 +64,68 @@ namespace LeafletMapCommentTool
 
         [JsonProperty("name")]
         public string Name { get; set; }
+
+        public Drawing Sketch { get; set; }
+
+        public List<TextAnnotation> TextAnnotations { get; set; }
     }
+
+    public class Drawing
+    {
+        [JsonProperty("dataUrl")]
+        public string DataUrl { get; set; }
+
+        [JsonProperty("bounds")]
+        public Bounds SketchBounds { get; set; }
+    }
+
+    public class Bounds
+    {
+        [JsonProperty("northWest")]
+        public LatLng NorthWest { get; set; }
+
+        [JsonProperty("southEast")]
+        public LatLng SouthEast { get; set; }
+    }
+
+    public class LatLng
+    {
+        [JsonProperty("lat")]
+        public float Lat { get; set; }
+
+        [JsonProperty("lng")]
+        public float Lng { get; set; }
+    }
+
+    public class TextAnnotation
+    {
+        [JsonProperty("textDrawing")]
+        public TextDrawing TextSketch { get; set; }
+
+        [JsonProperty("textId")]
+        public String TextId { get; set; }
+
+        [JsonProperty("latlng")]
+        public LatLng textLatLng { get; set; }
+        
+        [JsonProperty("textVal")]
+        public String TextVal { get; set; }
+        
+        [JsonProperty("textZoomLevel")]
+        public int textZoomLevel { get; set; }
+    }
+
+    public class TextDrawing
+    {
+        [JsonProperty("dataUrl")]
+        public string DataUrl { get; set; }
+
+        [JsonProperty("bounds")]
+        public Bounds SketchBounds { get; set; }
+
+        [JsonProperty("textId")]
+        public String TextId { get; set; }
+    }
+
+
 }

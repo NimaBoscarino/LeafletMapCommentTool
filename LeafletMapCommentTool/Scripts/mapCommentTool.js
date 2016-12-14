@@ -1105,116 +1105,25 @@ if (!Array.prototype.findIndex) {
                 hub.invoke('saveComment');
             }, false);
 
+            // a new comment has been created by another client
             hub.on('onNewComment', function () {
                 console.log('new comment added by another client');
             });
 
+            // a comment has been saved by another client (i.e. there is an update to load)
             hub.on('onSaveComment', function () {
                 console.log('a comment has been edited by another client');
             });
 
+            // the editList has been updated (something has been edited and saved, or a client has closed connection while editing)
             hub.on('onUpdateEditList', function () {
                 console.log('update edit list');
             });
 
+            // verify connection to server, and server to database
             con.start(function () {
                 hub.invoke('getMessage');
             });
-
-            /*
-            socket.on('load comments', function (msg) {
-                self.lockedComments = msg.editList;
-
-                msg.comments.forEach(function (loadedComment) {
-                    var comment = L.layerGroup();
-                    comment.id = loadedComment.id;
-                    var imageUrl = loadedComment.layers[0].src;
-                    var imageBounds = loadedComment.layers[0]._bounds;
-                    var newImage = L.imageOverlay(imageUrl, [imageBounds._southWest, imageBounds._northEast]);
-                    newImage.addTo(comment);
-                    newImage.layerType = 'drawing';
-                    self.root.Comments.list.push(comment);
-                    comment.name = loadedComment.name;
-                    comment.saveState = true;
-                    comment.zoomLevel = loadedComment.zoomLevel;
-                    // IF CURRENTLY IN MAP VIEWING MODE
-                    comment.addTo(map);
-                });
-                if (self.root.currentMode == 'controlBarHome') {
-                    self.root.ControlBar.displayControl('home');
-                }
-            });
-            socket.on('new comment added', function (msg) {
-                var comment = L.layerGroup();
-                comment.id = msg.id;
-                var imageUrl = msg.layers[0].src;
-                var imageBounds = msg.layers[0]._bounds;
-                var newImage = L.imageOverlay(imageUrl, [imageBounds._southWest, imageBounds._northEast]);
-                newImage.addTo(comment);
-                newImage.layerType = 'drawing';
-                self.root.Comments.list.push(comment);
-                comment.saveState = true;
-                comment.name = msg.name;
-                comment.zoomLevel = msg.zoomLevel;
-
-                // IF CURRENTLY IN MAP VIEWING MODE
-                comment.addTo(map);
-
-                //IF IN HOME VIEW, RELOAD COMMENT LIST
-                if (self.root.currentMode == 'controlBarHome') {
-                    self.root.ControlBar.displayControl('home');
-                }
-            });
-
-            socket.on('comment edited', function (msg) {
-                var comment;
-                self.root.Comments.list.forEach(function (listComment) {
-                    if (listComment.id == msg.id) {
-                        comment = listComment;
-                    }
-                });
-                comment.getLayers().forEach(function (layer) {
-                    if (layer.layerType == 'drawing') {
-                        comment.removeLayer(layer);
-                        layer.removeFrom(map);
-                    }
-                });
-
-                var imageUrl = msg.layers[0].src;
-                var imageBounds = msg.layers[0]._bounds;
-                var newImage = L.imageOverlay(imageUrl, [imageBounds._southWest, imageBounds._northEast]);
-                newImage.addTo(comment);
-                newImage.layerType = 'drawing';
-                comment.zoomLevel = msg.zoomLevel;
-
-                //IF IN HOME VIEW, RELOAD COMMENT LIST
-                if (self.root.currentMode == 'controlBarHome') {
-                    self.root.ControlBar.displayControl('home');
-                }
-            });
-
-            socket.on('editList update', function (msg) {
-                map.MapCommentTool.Network.lockedComments = msg.editList;
-                //IF IN HOME VIEW, RELOAD COMMENT LIST
-
-                if (self.root.currentMode == 'controlBarHome') {
-                    self.root.ControlBar.displayControl('home');
-                }
-            });
-
-            document.addEventListener("save-drawing", function (e) {
-                socket.emit('save drawing', e.detail);
-            });
-            document.addEventListener("new-drawing", function (e) {
-                socket.emit('new drawing', e.detail);
-            });
-            document.addEventListener("edit-start", function (e) {
-                socket.emit('start edit', e.detail);
-            });
-            document.addEventListener("edit-cancel", function (e) {
-                socket.emit('cancel edit', e.detail);
-            });
-            */
         },
     };
 
