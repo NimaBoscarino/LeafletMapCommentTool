@@ -323,7 +323,7 @@ if (!Array.prototype.findIndex) {
             var close = this._closeButton = L.DomUtil.create('a', 'close', drawingView);
             close.innerHTML = '&times;';
             close.onclick = function () {
-                self.saveDrawing(comment);
+                self.saveDrawing(comment, { closeSave: true });
             };
             var br = L.DomUtil.create('br', '', drawingView);
 
@@ -430,6 +430,7 @@ if (!Array.prototype.findIndex) {
 
         saveDrawing: function (comment, options) {
             var self = this;
+            var isNew = !comment.saveState;
 
             // prompt for title saving...
             if (!comment.saveState) {
@@ -465,7 +466,7 @@ if (!Array.prototype.findIndex) {
                     });
                 }
                 comment.addLayer(drawing);
-                
+
                 if (oldDrawing) {
                     var mergeCanvas = self.root.mergeCanvas;
                     document.body.appendChild(canvas);
@@ -511,32 +512,47 @@ if (!Array.prototype.findIndex) {
                         mergedDrawingLayer = L.imageOverlay(mergedDrawing, [newSouthWest, newNorthEast]);
                         comment.addLayer(mergedDrawingLayer);
                         mergedDrawingLayer.layerType = 'drawing';
+
+                        if (options && options.closeSave) {
+                            console.log('saved and closed, alert server');
+                        }
                     };
                     oldImageToCanvas.src = oldDrawing._url;
-                } 
+                } else {
+                    // serialize comment
+                    var sendComment = {
+                        id: comment.id,
+                        name: comment.name,
+                        drawing: {
+                            dataUrl: canvasDrawing,
+                            bounds: {
+                                northEast: {
+                                    lat: imageBoundsMaxCoord.lat,
+                                    lng: imageBoundsMaxCoord.lng
+                                },
+                                southWest: {
+                                    lat: imageBoundsMinCoord.lat,
+                                    lng: imageBoundsMinCoord.lng
+                                }
+                            }
+                        }
+                    };
+
+                    if (isNew) {
+                        var event = new CustomEvent('newComment', {
+                            'detail': {
+                                comment: sendComment
+                            }
+                        });
+
+                        document.dispatchEvent(event);
+                    }
+                }
             }
 
             self.root.stopDrawingMode();
 
-            var isNew = !comment.saveState;
             comment.saveState = true;
-
-            // This event needs to be placed somewhere where it can be called at the end of execution
-            // Or else it will get sent before images get merged... Need to do stuff with callbacks
-            
-            // serialize comment
-            var sendComment = {
-                id: comment.id,
-                name: comment.name,
-            };
-
-            var event = isNew ? new CustomEvent('newComment', {
-                'detail': {
-                    comment: sendComment
-                }
-            }) : new Event('saveComment');
-
-            document.dispatchEvent(event);
 
             if (options && options.textSave) {
                 var image;
@@ -674,8 +690,7 @@ if (!Array.prototype.findIndex) {
                     self.root.Comments.editingComment.addTo(self.root.ownMap);
                     // save everything (with options)
 
-                    self.root.ControlBar.saveDrawing(self.root.Comments.editingComment, {textSave: true});
-
+                    self.root.ControlBar.saveDrawing(self.root.Comments.editingComment, { textSave: true });
                 }
                 canvas.addEventListener('click', clickCanvasEndText, false);
             }
@@ -1096,6 +1111,7 @@ if (!Array.prototype.findIndex) {
             // this client has created a new comment
             document.addEventListener('newComment', function (e) {
                 console.log('alert hub for newComment');
+                console.log(e.detail.comment);
                 hub.invoke('newComment', e.detail.comment);
             }, false);
 

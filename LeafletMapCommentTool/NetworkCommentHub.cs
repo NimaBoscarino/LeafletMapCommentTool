@@ -1,20 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using Microsoft.AspNet.SignalR;
+﻿using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
-using MongoDB.Driver;
 using MongoDB.Bson;
+using MongoDB.Driver;
 using Newtonsoft.Json;
-using System.Collections;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace LeafletMapCommentTool
 {
     [HubName("networkComment")]
     public class NetworkCommentHub : Hub
     {
-
         public void getMessage()
         {
             var client = new MongoClient();
@@ -36,10 +33,28 @@ namespace LeafletMapCommentTool
             var database = client.GetDatabase("MapCommentToolSignalR");
             var collection = database.GetCollection<BsonDocument>("comments");
 
-            var newComment = new BsonDocument
+            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(comment))
             {
+                string name = descriptor.Name;
+                object value = descriptor.GetValue(comment);
+                System.Diagnostics.Debug.WriteLine("{0}={1}", name, value);
+            }
+
+            var newComment = new BsonDocument {
                 { "id", comment.Id },
                 { "name", comment.Name },
+                { "drawing", new BsonDocument {
+                    { "dataUrl", comment.Sketch.DataUrl },
+                    { "bounds", new BsonDocument {
+                        {"northEast", new BsonDocument {
+                            {"lat", comment.Sketch.SketchBounds.NorthEast.Lat },
+                            {"lng", comment.Sketch.SketchBounds.NorthEast.Lng }
+                        }
+                        }
+                    }
+                    }
+                }
+                }
             };
 
             collection.InsertOne(newComment);
@@ -54,9 +69,8 @@ namespace LeafletMapCommentTool
 
             this.Clients.Others.onSaveComment();
         }
-
     }
-    
+
     public class Comment
     {
         [JsonProperty("id")]
@@ -65,8 +79,10 @@ namespace LeafletMapCommentTool
         [JsonProperty("name")]
         public string Name { get; set; }
 
+        [JsonProperty("drawing")]
         public Drawing Sketch { get; set; }
 
+        [JsonProperty("textAnnotations")]
         public List<TextAnnotation> TextAnnotations { get; set; }
     }
 
@@ -81,11 +97,11 @@ namespace LeafletMapCommentTool
 
     public class Bounds
     {
-        [JsonProperty("northWest")]
-        public LatLng NorthWest { get; set; }
+        [JsonProperty("northEast")]
+        public LatLng NorthEast { get; set; }
 
-        [JsonProperty("southEast")]
-        public LatLng SouthEast { get; set; }
+        [JsonProperty("southWest")]
+        public LatLng SouthWest { get; set; }
     }
 
     public class LatLng
@@ -107,10 +123,10 @@ namespace LeafletMapCommentTool
 
         [JsonProperty("latlng")]
         public LatLng textLatLng { get; set; }
-        
+
         [JsonProperty("textVal")]
         public String TextVal { get; set; }
-        
+
         [JsonProperty("textZoomLevel")]
         public int textZoomLevel { get; set; }
     }
@@ -126,6 +142,4 @@ namespace LeafletMapCommentTool
         [JsonProperty("textId")]
         public String TextId { get; set; }
     }
-
-
 }
