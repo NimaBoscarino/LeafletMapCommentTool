@@ -1174,10 +1174,6 @@ if (!Array.prototype.findIndex) {
             var con = $.hubConnection();
             var hub = con.createHubProxy('networkComment');
 
-            hub.on('onGetMessage', function (i) {
-                console.log(i);
-            });
-
             // this client has created a new comment
             document.addEventListener('newComment', function (e) {
                 console.log('alert hub for newComment');
@@ -1204,11 +1200,16 @@ if (!Array.prototype.findIndex) {
                 hub.invoke('editCommentEnd', e.detail.comment);
             }, false);
 
+            // display messages from the hub
+            hub.on('onGetMessage', function (i) {
+                console.log(i);
+            });
+
             // a new comment has been created by another client
             hub.on('onNewComment', function () {
                 console.log('new comment added by another client');
             });
-
+            
             // a comment has been saved by another client (i.e. there is an update to load)
             hub.on('onSaveComment', function () {
                 console.log('a comment has been edited by another client');
