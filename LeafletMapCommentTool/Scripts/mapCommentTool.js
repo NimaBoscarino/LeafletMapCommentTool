@@ -528,6 +528,55 @@ if (!Array.prototype.findIndex) {
                             document.dispatchEvent(event);
 
                             // alert the server with the updated comment
+                            // serialize updated comment
+                            var updatedComment = {
+                                id: comment.id,
+                                name: comment.name,
+                                drawing: {
+                                    dataUrl: mergedDrawing,
+                                    bounds: {
+                                        northEast: {
+                                            lat: newNorthEast.lat,
+                                            lng: newNorthEast.lng
+                                        },
+                                        southWest: {
+                                            lat: newSouthWest.lat,
+                                            lng: newSouthWest.lng
+                                        }
+                                    }
+                                },
+                                textAnnotations: []
+                            };
+
+                            // populate textAnnotations array
+                            comment.textLayerGroup.getLayers().forEach(function (layer) {
+                                var textAnnotation = {
+                                    textDrawing: {
+                                        dataUrl: layer.dataUrl,
+                                        bounds: layer.bounds,
+                                        textId: layer.textId
+                                    },
+                                    textId: layer.textId,
+                                    latlng: {
+                                        lat: layer._latlng.lat,
+                                        lng: layer._latlng.lng
+                                    },
+                                    textVal: layer.textVal,
+                                    textZoomLevel: layer.textZoomLevel
+                                }
+
+                                updatedComment.textAnnotations.push(textAnnotation);
+                            });
+
+
+                            event = new CustomEvent('saveComment', {
+                                'detail': {
+                                    comment: updatedComment
+                                }
+                            });
+                            document.dispatchEvent(event);
+
+
                         }
                     };
                     oldImageToCanvas.src = oldDrawing._url;
@@ -1031,6 +1080,11 @@ if (!Array.prototype.findIndex) {
                 newTextImageOverlay.layerType = 'textDrawing';
                 newTextImageOverlay.textId = textId;
 
+                marker.bounds = {
+                    northEast: northEast,
+                    southWest: southWest,
+                }
+                marker.dataUrl = img.src;
                 marker.textVal = val;
                 marker.textZoomLevel = map.getZoom();
 
@@ -1047,10 +1101,13 @@ if (!Array.prototype.findIndex) {
                 });
                 newTextImageOverlay.on('click', function () {
                     if (self.root.Tools.currentTool == 'eraser') {
+                        // this thing is a mess
                         comment.removeLayer(newTextImageOverlay);
+                        comment.textLayerGroup.removeLayer(marker);
                         comment.removeLayer(textDrawingImage);
                         textDrawingImage.removeFrom(self.root.ownMap);
                         newTextImageOverlay.removeFrom(self.root.ownMap);
+                        console.log(comment);
                     }
                 });
 
@@ -1131,7 +1188,8 @@ if (!Array.prototype.findIndex) {
             // this client has executed "SAVE" on a comment that is not new
             document.addEventListener('saveComment', function (e) {
                 console.log('alert hub for saveComment');
-                hub.invoke('saveComment');
+                console.log(e.detail.comment);
+                hub.invoke('saveComment', e.detail.comment);
             }, false);
 
             // this client has begun editing a comment
@@ -1142,7 +1200,7 @@ if (!Array.prototype.findIndex) {
 
             // this client has ended editing a comment
             document.addEventListener('editCommentEnd', function (e) {
-                console.log('alert hub for editCommentEnd', e.detail.comment);
+                console.log('alert hub for editCommentEnd');
                 hub.invoke('editCommentEnd', e.detail.comment);
             }, false);
 

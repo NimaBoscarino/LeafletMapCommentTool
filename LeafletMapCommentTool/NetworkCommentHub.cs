@@ -49,6 +49,10 @@ namespace LeafletMapCommentTool
                         {"northEast", new BsonDocument {
                             {"lat", comment.Sketch.SketchBounds.NorthEast.Lat },
                             {"lng", comment.Sketch.SketchBounds.NorthEast.Lng }
+                        }},
+                        {"southWest", new BsonDocument {
+                            {"lat", comment.Sketch.SketchBounds.SouthWest.Lat },
+                            {"lng", comment.Sketch.SketchBounds.SouthWest.Lng }
                         }
                         }
                     }
@@ -62,10 +66,70 @@ namespace LeafletMapCommentTool
             this.Clients.Others.onNewComment();
         }
 
-        public void saveComment()
+        public void saveComment(Comment comment)
         {
             var client = new MongoClient();
             var database = client.GetDatabase("MapCommentToolSignalR");
+            var collection = database.GetCollection<BsonDocument>("comments");
+            var filter = Builders<BsonDocument>.Filter.Eq("id", comment.Id);
+
+            // remove old version of the comment ( I don't really want to deal with updating right now )
+            collection.DeleteMany(filter);
+
+            // insert new version of the comment
+            var updatedComment = new BsonDocument {
+                { "id", comment.Id },
+                { "name", comment.Name },
+                { "drawing", new BsonDocument {
+                    { "dataUrl", comment.Sketch.DataUrl },
+                    { "bounds", new BsonDocument {
+                        {"northEast", new BsonDocument {
+                            {"lat", comment.Sketch.SketchBounds.NorthEast.Lat },
+                            {"lng", comment.Sketch.SketchBounds.NorthEast.Lng }
+                        }},
+                        {"southWest", new BsonDocument {
+                            {"lat", comment.Sketch.SketchBounds.SouthWest.Lat },
+                            {"lng", comment.Sketch.SketchBounds.SouthWest.Lng }
+                        }
+                        }
+                    }
+                    }
+                }
+                }
+            };
+
+            var textAnnotations = new BsonArray();
+            foreach (var text in comment.TextAnnotations)
+            {
+                textAnnotations.Add(new BsonDocument
+                {
+                    { "textDrawing", new BsonDocument {
+                        { "dataUrl", text.TextSketch.DataUrl },
+                        { "bounds", new BsonDocument {
+                            {"northEast", new BsonDocument {
+                                {"lat", text.TextSketch.SketchBounds.NorthEast.Lat },
+                                {"lng", text.TextSketch.SketchBounds.NorthEast.Lng }
+                            }},   
+                            {"southWest", new BsonDocument {
+                                {"lat", text.TextSketch.SketchBounds.SouthWest.Lat },
+                                {"lng", text.TextSketch.SketchBounds.SouthWest.Lng }
+                            }}
+                        }},
+                        { "textId", text.TextId}
+                    }},
+                    { "textId", text.TextId },
+                    { "latlng", new BsonDocument {
+                        {"lat", text.textLatLng.Lat },
+                        {"lng", text.textLatLng.Lng }
+                    }},
+                    { "textVal", text.TextVal },
+                    { "textZoomLevel", text.textZoomLevel }
+                }); // I hate curly braces...
+            }
+            // insert all the annotations into the comment and then insert into mongo
+            updatedComment.Add("textAnnotations", textAnnotations);
+
+            collection.InsertOne(updatedComment);
 
             this.Clients.Others.onSaveComment();
         }
@@ -95,7 +159,7 @@ namespace LeafletMapCommentTool
             var collection = database.GetCollection<BsonDocument>("beingEdited");
             var filter = Builders<BsonDocument>.Filter.Eq("id", comment.Id);
 
-            collection.DeleteOne(filter);
+            collection.DeleteMany(filter);
 
             // update the edit list for all
         }
