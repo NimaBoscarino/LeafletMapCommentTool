@@ -528,10 +528,6 @@ if (!Array.prototype.findIndex) {
             var sendComment = {
                 id: comment.id,
                 name: comment.name,
-                drawing: {
-                    // bunch of stuff
-                },
-                textAnnotations: [],
             };
 
             var event = isNew ? new CustomEvent('newComment', {
@@ -1100,8 +1096,7 @@ if (!Array.prototype.findIndex) {
             // this client has created a new comment
             document.addEventListener('newComment', function (e) {
                 console.log('alert hub for newComment');
-                console.log(e.detail.comment);
-                hub.invoke('newComment');
+                hub.invoke('newComment', e.detail.comment);
             }, false);
 
             // this client has executed "SAVE" on a comment that is not new

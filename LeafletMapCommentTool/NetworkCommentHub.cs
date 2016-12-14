@@ -6,6 +6,7 @@ using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using MongoDB.Driver;
 using MongoDB.Bson;
+using Newtonsoft.Json;
 
 namespace LeafletMapCommentTool
 {
@@ -28,10 +29,19 @@ namespace LeafletMapCommentTool
             this.Clients.Others.onGetMessage(alert["message"]);
         }
 
-        public void newComment()
+        public void newComment(Comment comment)
         {
             var client = new MongoClient();
             var database = client.GetDatabase("MapCommentToolSignalR");
+            var collection = database.GetCollection<BsonDocument>("comments");
+
+            var newComment = new BsonDocument
+            {
+                { "id", comment.Id },
+                { "name", comment.Name },
+            };
+
+            collection.InsertOne(newComment);
 
             this.Clients.Others.onNewComment();
         }
@@ -44,5 +54,14 @@ namespace LeafletMapCommentTool
             this.Clients.Others.onSaveComment();
         }
 
+    }
+
+    public class Comment
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; }
+
+        [JsonProperty("name")]
+        public string Name { get; set; }
     }
 }
