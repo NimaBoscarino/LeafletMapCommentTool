@@ -63,7 +63,7 @@ namespace LeafletMapCommentTool
 
             collection.InsertOne(newComment);
 
-            this.Clients.Others.onNewComment();
+            this.Clients.Others.onNewComment(comment);
         }
 
         public void saveComment(Comment comment)
@@ -131,7 +131,7 @@ namespace LeafletMapCommentTool
 
             collection.InsertOne(updatedComment);
 
-            this.Clients.Others.onSaveComment();
+            this.Clients.Others.onSaveComment(comment);
         }
 
         public void editCommentStart(Comment comment)
@@ -139,6 +139,7 @@ namespace LeafletMapCommentTool
             var client = new MongoClient();
             var database = client.GetDatabase("MapCommentToolSignalR");
             var collection = database.GetCollection<BsonDocument>("beingEdited");
+            var projection = Builders<BsonDocument>.Projection.Exclude("_id");
 
             // insert into beignEdited
             var editComment = new BsonDocument {
@@ -147,7 +148,11 @@ namespace LeafletMapCommentTool
 
             collection.InsertOne(editComment);
 
+            var editList = collection.Find(new BsonDocument()).Project(projection).ToList();
+            
             // update the edit list for all
+            this.Clients.All.onUpdateEditList(editList);
+
         }
 
         public void editCommentEnd(Comment comment)
@@ -158,10 +163,14 @@ namespace LeafletMapCommentTool
             var database = client.GetDatabase("MapCommentToolSignalR");
             var collection = database.GetCollection<BsonDocument>("beingEdited");
             var filter = Builders<BsonDocument>.Filter.Eq("id", comment.Id);
+            var projection = Builders<BsonDocument>.Projection.Exclude("_id");
 
             collection.DeleteMany(filter);
 
+            var editList = collection.Find(new BsonDocument()).Project(projection).ToList();
+
             // update the edit list for all
+            this.Clients.All.onUpdateEditList(editList);
         }
 
     

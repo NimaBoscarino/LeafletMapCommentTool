@@ -1206,18 +1206,21 @@ if (!Array.prototype.findIndex) {
             });
 
             // a new comment has been created by another client
-            hub.on('onNewComment', function () {
+            hub.on('onNewComment', function (newComment) {
                 console.log('new comment added by another client');
+                console.log(newComment);
             });
             
             // a comment has been saved by another client (i.e. there is an update to load)
-            hub.on('onSaveComment', function () {
+            hub.on('onSaveComment', function (savedComment) {
                 console.log('a comment has been edited by another client');
+                console.log(savedComment);
             });
 
             // the editList has been updated (something has been edited and saved, or a client has closed connection while editing)
-            hub.on('onUpdateEditList', function () {
+            hub.on('onUpdateEditList', function (newEditList) {
                 console.log('update edit list');
+                console.log(newEditList);
             });
 
             // verify connection to server, and server to database

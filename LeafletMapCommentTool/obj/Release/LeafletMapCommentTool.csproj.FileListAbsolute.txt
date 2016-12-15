@@ -24,3 +24,4 @@ C:\Users\nboscarino\Documents\Visual Studio 2013\Projects\LeafletMapCommentTool\
 C:\Users\nboscarino\Documents\Visual Studio 2013\Projects\LeafletMapCommentTool\LeafletMapCommentTool\bin\Newtonsoft.Json.xml
 C:\Users\nboscarino\Documents\Visual Studio 2013\Projects\LeafletMapCommentTool\LeafletMapCommentTool\obj\Release\LeafletMapCommentTool.dll
 C:\Users\nboscarino\Documents\Visual Studio 2013\Projects\LeafletMapCommentTool\LeafletMapCommentTool\obj\Release\LeafletMapCommentTool.pdb
+C:\Users\nboscarino\Documents\Visual Studio 2013\Projects\LeafletMapCommentTool\LeafletMapCommentTool\obj\Release\LeafletMapCommentTool.csprojResolveAssemblyReference.cache
