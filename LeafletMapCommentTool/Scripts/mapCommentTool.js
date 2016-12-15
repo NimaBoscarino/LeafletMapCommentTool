@@ -435,11 +435,11 @@ if (!Array.prototype.findIndex) {
             if (!comment.saveState) {
                 comment.name = prompt("Please name your note", "Note") || "Note";
             }
-            comment.zoomLevel = self.root.ownMap.getZoom();
 
             if (options && options.textSave) {
                 console.log('saving text, so special case');
             } else {
+                comment.zoomLevel = self.root.ownMap.getZoom();
                 // SAVING LOGIC
                 var context = self.root.drawingCanvas._ctx;
                 var canvas = context.canvas;
@@ -657,7 +657,7 @@ if (!Array.prototype.findIndex) {
             var self = this;
             var comment = L.layerGroup();
             comment.textLayerGroup = L.layerGroup();
-            
+
             if (loadedComment) {
                 // prep comment with all that tasty info
                 comment.saveState = true;
@@ -1231,8 +1231,8 @@ if (!Array.prototype.findIndex) {
             var loadInitComments = function(commentList) {
                 commentList.forEach(function (commentEntry) {
                     var comment = self.root.Util.deserializeCommentFromArrayForm(commentEntry);
-                    
-                    // create 
+
+                    // create
                     self.root.Comments.newComment(comment)
                 });
             }
@@ -1280,7 +1280,7 @@ if (!Array.prototype.findIndex) {
                 console.log('new comment added by another client');
                 console.log(newComment);
             });
-            
+
             // a comment has been saved by another client (i.e. there is an update to load)
             hub.on('onSaveComment', function (savedComment) {
                 console.log('a comment has been edited by another client');
