@@ -173,6 +173,22 @@ namespace LeafletMapCommentTool
             this.Clients.All.onUpdateEditList(editList);
         }
 
+
+        public void initialLoad()
+        {
+            var client = new MongoClient();
+            var database = client.GetDatabase("MapCommentToolSignalR");
+            var beingEdited = database.GetCollection<BsonDocument>("beingEdited");
+            var comments = database.GetCollection<BsonDocument>("comments");
+            var projection = Builders<BsonDocument>.Projection.Exclude("_id");
+
+            var editList = beingEdited.Find(new BsonDocument()).Project(projection).ToList();
+            var commentsList = comments.Find(new BsonDocument()).Project(projection).ToList();
+
+            // update the edit list for all
+            this.Clients.All.onInitialLoad(editList, commentsList);
+        }
+
     
     }
 

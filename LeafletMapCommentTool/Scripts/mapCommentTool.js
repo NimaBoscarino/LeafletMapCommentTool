@@ -714,6 +714,32 @@ if (!Array.prototype.findIndex) {
 
             var image = canvas.toDataURL();
             return image;
+        },
+
+        deserializeCommentFromArrayForm: function (arrayComment) {
+            var self = this;
+
+            var comment = {};
+
+            self.recursiveTraverse(comment, arrayComment, 0)
+
+            return comment;
+        },
+
+        recursiveTraverse: function (comment, array, index) {
+            // Recrusiverly traverse through the Name, Value array and turn it into an object
+            var self = this;
+            if (!Array.isArray(array[index].Value)) {
+                comment[array[index].Name] = array[index].Value;
+            } else if (comment) {
+                comment[array[index].Name] = {};
+                self.recursiveTraverse(comment[array[index].Name], array[index].Value, 0);
+            }
+
+
+            if (index < array.length - 1) {
+                self.recursiveTraverse(comment, array, index + 1);
+            }
         }
     };
 
@@ -1174,6 +1200,22 @@ if (!Array.prototype.findIndex) {
             var con = $.hubConnection();
             var hub = con.createHubProxy('networkComment');
 
+            /** Loading Comment Functions **/
+
+            var loadInitComments = function(commentList) {
+                commentList.forEach(function (commentEntry) {
+                    var comment = self.root.Util.deserializeCommentFromArrayForm(commentEntry);
+                    console.log(comment);
+                });
+            }
+
+            var setLockedComments = function (editList) {
+                self.lockedComments = editList;
+                // also trigger redrawing of home view if client is not currently in drawing mode
+                //
+            }
+
+
             // this client has created a new comment
             document.addEventListener('newComment', function (e) {
                 console.log('alert hub for newComment');
@@ -1223,9 +1265,19 @@ if (!Array.prototype.findIndex) {
                 console.log(newEditList);
             });
 
+            // load it all up
+            hub.on('onInitialLoad', function (editList, commentList) {
+                console.log('received big old package of everything');
+                console.log(editList, commentList);
+
+                // setLockedComments(editList);
+                loadInitComments(commentList);
+            });
+
             // verify connection to server, and server to database
             con.start(function () {
                 hub.invoke('getMessage');
+                hub.invoke('initialLoad');
             });
         },
     };
