@@ -401,6 +401,9 @@ if (!Array.prototype.findIndex) {
                 canvasTransformArray = canvas.style.transform.split(/,|\(|\)|px| /);
             }
 
+            console.log('WHEE WHEE WHEE WHEE');
+            console.log(image._image.src, image._image.width, image._image.height);
+
             if (image) {
                 var imageObj = new Image();
 
@@ -464,6 +467,7 @@ if (!Array.prototype.findIndex) {
                         }
                     });
                 }
+
                 comment.addLayer(drawing);
 
                 if (oldDrawing) {
@@ -514,7 +518,6 @@ if (!Array.prototype.findIndex) {
 
                         if (options && options.closeSave) {
                             console.log('saved and closed, alert server');
-                            console.log('is old!!!!');
                             // alert the server to update the editList
                             var editListComment = {
                                 id: comment.id,
@@ -618,6 +621,7 @@ if (!Array.prototype.findIndex) {
 
             comment.saveState = true;
 
+            // something might be wrong in here
             if (options && options.textSave) {
                 var image;
                 comment.getLayers().forEach(function (layer) {
@@ -1027,8 +1031,9 @@ if (!Array.prototype.findIndex) {
                         canvas = self.root.drawingCanvas._container;
 
                         var coords = self.root.ownMap.containerPointToLatLng([e.layerX, e.layerY]);
+                        var image;
 
-                        // needs to be added to a layer group for text... not to map
+                        // hide all text annotations ... just for visuals
                         comment.textLayerGroup.getLayers().forEach(function (layer) {
                             layer.removeFrom(self.root.ownMap);
                         });
@@ -1053,6 +1058,12 @@ if (!Array.prototype.findIndex) {
 
                         // start editing again
                         // ...
+
+                        comment.getLayers().forEach(function (layer) {
+                            if (layer.layerType == 'drawing') {
+                                image = layer;
+                            }
+                        });
 
                         self.root.ControlBar.editComment(comment, image, { addText: true, textAreaMarker: marker });
                         self.root.Tools.setCurrentTool('text', { listeners: false });
