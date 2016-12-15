@@ -723,9 +723,14 @@ if (!Array.prototype.findIndex) {
             }
 
             if (index) {
-                self.list[index] = comment;
+                self.list[index.index] = comment;
+                console.log('updating a comment');
             } else {
                 self.list.push(comment);
+            }
+
+            if (self.root.currentMode != 'drawing') {
+                self.root.ControlBar.displayControl('home');
             }
 
             return comment;
@@ -1343,7 +1348,6 @@ if (!Array.prototype.findIndex) {
 
                 self.root.Comments.newComment(newComment);
                 // call to refresh the comment list
-
             });
 
             // a comment has been saved by another client (i.e. there is an update to load)
@@ -1375,7 +1379,9 @@ if (!Array.prototype.findIndex) {
                     layer.removeFrom(self.root.ownMap);
                 });
 
-                self.root.Comments.newComment(savedComment, index);
+                self.root.Comments.newComment(savedComment, { index: index });
+
+                // call to refresh the comment list
 
             });
 
@@ -1391,6 +1397,9 @@ if (!Array.prototype.findIndex) {
 
                 setLockedComments(JSON.parse(editList));
                 loadInitComments(JSON.parse(commentList));
+
+                // call to refresh the comment list
+
             });
 
             // verify connection to server, and server to database
