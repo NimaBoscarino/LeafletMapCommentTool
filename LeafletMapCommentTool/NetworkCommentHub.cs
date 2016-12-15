@@ -58,7 +58,9 @@ namespace LeafletMapCommentTool
                     }
                     }
                 }
-                }
+                },
+                { "zoomLevel", comment.ZoomLevel }
+
             };
 
             collection.InsertOne(newComment);
@@ -95,7 +97,8 @@ namespace LeafletMapCommentTool
                     }
                     }
                 }
-                }
+                },
+                { "zoomLevel", comment.ZoomLevel }
             };
 
             var textAnnotations = new BsonArray();
@@ -202,6 +205,9 @@ namespace LeafletMapCommentTool
 
         [JsonProperty("drawing")]
         public Drawing Sketch { get; set; }
+     
+        [JsonProperty("zoomLevel")]
+        public int ZoomLevel { get; set; }
 
         [JsonProperty("textAnnotations")]
         public List<TextAnnotation> TextAnnotations { get; set; }

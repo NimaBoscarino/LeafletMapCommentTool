@@ -545,6 +545,7 @@ if (!Array.prototype.findIndex) {
                                         }
                                     }
                                 },
+                                zoomLevel: comment.zoomLevel,
                                 textAnnotations: []
                             };
 
@@ -599,7 +600,8 @@ if (!Array.prototype.findIndex) {
                                         lng: imageBoundsMinCoord.lng
                                     }
                                 }
-                            }
+                            },
+                            zoomLevel: comment.zoomLevel,
                         };
 
                         var event = new CustomEvent('newComment', {
@@ -651,14 +653,35 @@ if (!Array.prototype.findIndex) {
             return comment.saveState;
         },
 
-        newComment: function () {
+        newComment: function (loadedComment) {
             var self = this;
             var comment = L.layerGroup();
-            comment.saveState = false;
-            comment.id = self.root.Util.generateGUID();
             comment.textLayerGroup = L.layerGroup();
-            self.editingComment = comment;
+            
+            if (loadedComment) {
+                // prep comment with all that tasty info
+                comment.saveState = true;
+                comment.id = loadedComment.id;
+                comment.name = loadedComment.name;
+                comment.zoomLevel = loadedComment.zoomLevel;
+
+                // load sketch
+                var newImage = L.imageOverlay(loadedComment.drawing.dataUrl, [loadedComment.drawing.bounds.southWest, loadedComment.drawing.bounds.northEast]);
+                newImage.addTo(comment);
+                newImage.layerType = 'drawing';
+
+                // load all text annotations
+
+                comment.addTo(self.root.ownMap);
+
+            } else {
+                comment.id = self.root.Util.generateGUID();
+                comment.saveState = false;
+                self.editingComment = comment;
+            }
+
             self.list.push(comment);
+
             return comment;
         }
     };
@@ -729,15 +752,18 @@ if (!Array.prototype.findIndex) {
         recursiveTraverse: function (comment, array, index) {
             // Recrusiverly traverse through the Name, Value array and turn it into an object
             var self = this;
-            if (!Array.isArray(array[index].Value)) {
+            console.log(comment, array, index);
+            console.log(array.length)
+            if (array.length > 0 && !Array.isArray(array[index].Value)) {
+                console.log(array.length)
                 comment[array[index].Name] = array[index].Value;
-            } else if (comment) {
+            } else if (array.length > 0 && comment) {
                 comment[array[index].Name] = {};
                 self.recursiveTraverse(comment[array[index].Name], array[index].Value, 0);
             }
 
 
-            if (index < array.length - 1) {
+            if ((index < array.length - 1)) {
                 self.recursiveTraverse(comment, array, index + 1);
             }
         }
@@ -1205,7 +1231,9 @@ if (!Array.prototype.findIndex) {
             var loadInitComments = function(commentList) {
                 commentList.forEach(function (commentEntry) {
                     var comment = self.root.Util.deserializeCommentFromArrayForm(commentEntry);
-                    console.log(comment);
+                    
+                    // create 
+                    self.root.Comments.newComment(comment)
                 });
             }
 
