@@ -189,7 +189,7 @@ namespace LeafletMapCommentTool
             var commentsList = comments.Find(new BsonDocument()).Project(projection).ToList();
 
             // update the edit list for all
-            this.Clients.All.onInitialLoad(editList.ToJson(), commentsList.ToJson());
+            this.Clients.Caller.onInitialLoad(editList.ToJson(), commentsList.ToJson());
         }
 
     

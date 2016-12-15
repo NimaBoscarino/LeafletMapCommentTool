@@ -658,7 +658,7 @@ if (!Array.prototype.findIndex) {
             return comment.saveState;
         },
 
-        newComment: function (loadedComment) {
+        newComment: function (loadedComment, index) {
             var self = this;
             var comment = L.layerGroup();
             comment.textLayerGroup = L.layerGroup();
@@ -676,43 +676,44 @@ if (!Array.prototype.findIndex) {
                 newImage.layerType = 'drawing';
 
                 // load all text annotations
-                console.log(loadedComment);
-                loadedComment.textAnnotations.forEach(function (layer) {
-                    console.log(layer, 'aasdasd');
-                    var newTextImage = L.imageOverlay(layer.textDrawing.dataUrl, [layer.textDrawing.bounds.southWest, layer.textDrawing.bounds.northEast]);
-                    newTextImage.addTo(comment);
-                    newTextImage.layerType = 'textDrawing';
+                if (loadedComment.textAnnotations) {
+                    loadedComment.textAnnotations.forEach(function (layer) {
+                        console.log(layer, 'aasdasd');
+                        var newTextImage = L.imageOverlay(layer.textDrawing.dataUrl, [layer.textDrawing.bounds.southWest, layer.textDrawing.bounds.northEast]);
+                        newTextImage.addTo(comment);
+                        newTextImage.layerType = 'textDrawing';
 
-                    var myIcon = L.divIcon({
-                        className: 'text-comment-div',
-                        html: '<textarea id="' + layer.textId + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" rows="6" cols="30" maxlength="130"></textarea>'
+                        var myIcon = L.divIcon({
+                            className: 'text-comment-div',
+                            html: '<textarea id="' + layer.textId + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" rows="6" cols="30" maxlength="130"></textarea>'
+                        });
+
+                        marker = L.marker(layer.latlng, {
+                            icon: myIcon
+                        });
+                        marker.textId = layer.textId;
+                        marker.addTo(comment.textLayerGroup);
+                        marker.layerType = 'textAreaMarker';
+
+                        var img = new Image();
+
+                        img.onload = function () {
+                            // give the marker all its listeners
+                            self.root.Tools.text.placeText({
+                                marker: marker,
+                                img: img,
+                                textId: layer.textId,
+                                val: layer.textVal,
+                                textDrawingImage: newTextImage,
+                                comment: comment,
+                            }, self.root);
+                        }
+                        img.src = layer.textDrawing.dataUrl;
+
+                        newTextImage.addTo(self.root.ownMap);
                     });
-
-                    marker = L.marker(layer.latlng, {
-                        icon: myIcon
-                    });
-                    marker.textId = layer.textId;
-                    marker.addTo(comment.textLayerGroup);
-                    marker.layerType = 'textAreaMarker';
-
-                    var img = new Image();
-
-                    img.onload = function () {
-                        // give the marker all its listeners
-                        self.root.Tools.text.placeText({
-                            marker: marker,
-                            img: img,
-                            textId: layer.textId,
-                            val: layer.textVal,
-                            textDrawingImage: newTextImage,
-                            comment: comment,
-                        }, self.root);
-                    }
-                    img.src = layer.textDrawing.dataUrl;
-
-                    newTextImage.addTo(self.root.ownMap);
-                });
-
+                }
+                
                 comment.addTo(self.root.ownMap);
 
             } else {
@@ -721,7 +722,11 @@ if (!Array.prototype.findIndex) {
                 self.editingComment = comment;
             }
 
-            self.list.push(comment);
+            if (index) {
+                self.list[index] = comment;
+            } else {
+                self.list.push(comment);
+            }
 
             return comment;
         }
@@ -1335,12 +1340,43 @@ if (!Array.prototype.findIndex) {
             hub.on('onNewComment', function (newComment) {
                 console.log('new comment added by another client');
                 console.log(newComment);
+
+                self.root.Comments.newComment(newComment);
+                // call to refresh the comment list
+
             });
 
             // a comment has been saved by another client (i.e. there is an update to load)
             hub.on('onSaveComment', function (savedComment) {
                 console.log('a comment has been edited by another client');
                 console.log(savedComment);
+
+                // delete old version of comment (eventually will replace this with just an update thing, but this is easier for now)
+
+                var oldComment;
+                var index;
+
+                self.root.Comments.list.forEach(function (comment, i) {
+                    if (comment.id == savedComment.id) {
+                        oldComment = comment;
+                        index = i;
+                    }
+                });
+
+                // remove all text layers (markers)
+                oldComment.textLayerGroup.getLayers().forEach(function (layer) {
+                    oldComment.textLayerGroup.removeLayer(layer);
+                    layer.removeFrom(self.root.ownMap);
+                });
+
+                // remove all other layers
+                oldComment.getLayers().forEach(function (layer) {
+                    oldComment.removeLayer(layer);
+                    layer.removeFrom(self.root.ownMap);
+                });
+
+                self.root.Comments.newComment(savedComment, index);
+
             });
 
             // the editList has been updated (something has been edited and saved, or a client has closed connection while editing)
