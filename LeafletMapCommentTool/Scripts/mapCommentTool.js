@@ -299,6 +299,7 @@ if (!Array.prototype.findIndex) {
                     var commentEdit = L.DomUtil.create('a', 'edit-button', commentItem);
 
                     var image;
+                    console.log(comment.getLayers());
                     comment.getLayers().forEach(function (layer) {
                         if (layer.layerType == 'drawing') {
                             image = layer;
@@ -675,6 +676,42 @@ if (!Array.prototype.findIndex) {
                 newImage.layerType = 'drawing';
 
                 // load all text annotations
+                console.log(loadedComment);
+                loadedComment.textAnnotations.forEach(function (layer) {
+                    console.log(layer, 'aasdasd');
+                    var newTextImage = L.imageOverlay(layer.textDrawing.dataUrl, [layer.textDrawing.bounds.southWest, layer.textDrawing.bounds.northEast]);
+                    newTextImage.addTo(comment);
+                    newTextImage.layerType = 'textDrawing';
+
+                    var myIcon = L.divIcon({
+                        className: 'text-comment-div',
+                        html: '<textarea id="' + layer.textId + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="text-comment-input" rows="6" cols="30" maxlength="130"></textarea>'
+                    });
+
+                    marker = L.marker(layer.latlng, {
+                        icon: myIcon
+                    });
+                    marker.textId = layer.textId;
+                    marker.addTo(comment.textLayerGroup);
+                    marker.layerType = 'textAreaMarker';
+
+                    var img = new Image();
+
+                    img.onload = function () {
+                        // give the marker all its listeners
+                        self.root.Tools.text.placeText({
+                            marker: marker,
+                            img: img,
+                            textId: layer.textId,
+                            val: layer.textVal,
+                            textDrawingImage: newTextImage,
+                            comment: comment,
+                        }, self.root);
+                    }
+                    img.src = layer.textDrawing.dataUrl;
+
+                    newTextImage.addTo(self.root.ownMap);
+                });
 
                 comment.addTo(self.root.ownMap);
 
@@ -749,23 +786,26 @@ if (!Array.prototype.findIndex) {
             var comment = {};
 
             self.recursiveTraverse(comment, arrayComment, 0)
-
+            console.log(comment);
             return comment;
         },
 
         recursiveTraverse: function (comment, array, index) {
             // Recrusiverly traverse through the Name, Value array and turn it into an object
             var self = this;
-            console.log(comment, array, index);
-            console.log(array.length)
             if (array.length > 0 && !Array.isArray(array[index].Value)) {
-                console.log(array.length)
                 comment[array[index].Name] = array[index].Value;
+            } else if (array.length > 0 && !Array.isArray(array[index].Value)) {
+                console.log('wooo 2');
+                comment[array[index]] = array[index];
+            } else if (array.length > 0 && Array.isArray(array[index].Value[0])) {
+                console.log('wooo');
+                comment[array[index].Name] = [];
+                self.recursiveTraverse(comment[array[index]], array[index], 0);
             } else if (array.length > 0 && comment) {
                 comment[array[index].Name] = {};
                 self.recursiveTraverse(comment[array[index].Name], array[index].Value, 0);
             }
-
 
             if ((index < array.length - 1)) {
                 self.recursiveTraverse(comment, array, index + 1);
@@ -1126,8 +1166,12 @@ if (!Array.prototype.findIndex) {
                 img.src = self.root.Util.cropImageFromCanvas(ctx, canvas);
             },
 
-            placeText: function (args) {
+            placeText: function (args, root) {
                 var self = this; // I should get this tattooed on my forehead.
+
+                if (root) {
+                    self.root = root;
+                }
 
                 var marker = args.marker;
                 var img = args.img;
@@ -1241,15 +1285,16 @@ if (!Array.prototype.findIndex) {
 
             var loadInitComments = function(commentList) {
                 commentList.forEach(function (commentEntry) {
-                    var comment = self.root.Util.deserializeCommentFromArrayForm(commentEntry);
+                    console.log(commentEntry);
 
-                    // create
-                    self.root.Comments.newComment(comment)
+                    // create new comment from blueprint
+                    self.root.Comments.newComment(commentEntry)
                 });
             }
 
             var setLockedComments = function (editList) {
                 self.lockedComments = editList;
+
                 // also trigger redrawing of home view if client is not currently in drawing mode
                 //
             }
@@ -1307,10 +1352,9 @@ if (!Array.prototype.findIndex) {
             // load it all up
             hub.on('onInitialLoad', function (editList, commentList) {
                 console.log('received big old package of everything');
-                console.log(editList, commentList);
 
-                // setLockedComments(editList);
-                loadInitComments(commentList);
+                setLockedComments(JSON.parse(editList));
+                loadInitComments(JSON.parse(commentList));
             });
 
             // verify connection to server, and server to database
