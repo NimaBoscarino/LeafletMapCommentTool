@@ -130,7 +130,9 @@ if (!Array.prototype.findIndex) {
 
             // Remove all comment layer groups from map
             self.Comments.list.forEach(function (_comment) {
-                _comment.removeFrom(self.ownMap);
+                if (!options || (_comment.id != comment.id)) {
+                    _comment.removeFrom(self.ownMap);
+                }
             });
 
             self.Comments.editingComment = comment;
@@ -387,6 +389,7 @@ if (!Array.prototype.findIndex) {
             // trigger drawing mode
             if (options) {
                 self.root.startDrawingMode(comment, options);
+                console.log(image._image.width, image._image.height);
             } else {
                 self.root.startDrawingMode(comment);
             }
@@ -402,8 +405,6 @@ if (!Array.prototype.findIndex) {
                 canvasTransformArray = canvas.style.transform.split(/,|\(|\)|px| /);
             }
 
-            console.log('WHEE WHEE WHEE WHEE');
-            console.log(image._image.src, image._image.width, image._image.height);
 
             if (image) {
                 var imageObj = new Image();
@@ -678,10 +679,6 @@ if (!Array.prototype.findIndex) {
                 // load all text annotations
                 if (loadedComment.textAnnotations) {
                     loadedComment.textAnnotations.forEach(function (layer) {
-                        console.log(layer, 'aasdasd');
-                        var newTextImage = L.imageOverlay(layer.textDrawing.dataUrl, [layer.textDrawing.bounds.southWest, layer.textDrawing.bounds.northEast]);
-                        newTextImage.addTo(comment);
-                        newTextImage.layerType = 'textDrawing';
 
                         var myIcon = L.divIcon({
                             className: 'text-comment-div',
@@ -704,13 +701,11 @@ if (!Array.prototype.findIndex) {
                                 img: img,
                                 textId: layer.textId,
                                 val: layer.textVal,
-                                textDrawingImage: newTextImage,
                                 comment: comment,
                             }, self.root);
                         }
                         img.src = layer.textDrawing.dataUrl;
 
-                        newTextImage.addTo(self.root.ownMap);
                     });
                 }
                 
@@ -1115,6 +1110,7 @@ if (!Array.prototype.findIndex) {
                             }
                         });
 
+                        console.log(image._image.height, image._image.width);
                         self.root.ControlBar.editComment(comment, image, { addText: true, textAreaMarker: marker });
                         self.root.Tools.setCurrentTool('text', { listeners: false });
                         textBox = document.getElementById(id);
@@ -1129,13 +1125,11 @@ if (!Array.prototype.findIndex) {
                 var self = this;
                 var textBox = document.getElementById(textId);
                 var boundingRect = textBox.getBoundingClientRect();
-                var textDrawingImage;
                 //remove old drawing
                 comment.getLayers().forEach(function (layer) {
                     if (layer.layerType == 'textDrawing' && layer.textId == textId) {
                         comment.removeLayer(layer);
                         layer.removeFrom(self.root.ownMap);
-                        textDrawingImage = layer;
                     }
                 });
 
@@ -1168,7 +1162,6 @@ if (!Array.prototype.findIndex) {
                         img: img,
                         textId: textId,
                         val: val,
-                        textDrawingImage: textDrawingImage,
                         comment: comment,
                     });
                 };
@@ -1187,7 +1180,6 @@ if (!Array.prototype.findIndex) {
                 var img = args.img;
                 var textId = args.textId;
                 var val = args.val;
-                var textDrawingImage = args.textDrawingImage;
                 var comment = args.comment;
 
                 var markerToPoint = self.root.ownMap.latLngToLayerPoint(marker._latlng);
@@ -1221,8 +1213,6 @@ if (!Array.prototype.findIndex) {
                         // this thing is a mess
                         comment.removeLayer(newTextImageOverlay);
                         comment.textLayerGroup.removeLayer(marker);
-                        comment.removeLayer(textDrawingImage);
-                        textDrawingImage.removeFrom(self.root.ownMap);
                         newTextImageOverlay.removeFrom(self.root.ownMap);
                         console.log(comment);
                     }
@@ -1277,6 +1267,7 @@ if (!Array.prototype.findIndex) {
                 });
 
                 comment.addLayer(newTextImageOverlay);
+                newTextImageOverlay.removeFrom(self.root.ownMap);
             }
         }
     };
